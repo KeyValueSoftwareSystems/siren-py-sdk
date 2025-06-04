@@ -1,3 +1,5 @@
+"""Basic usage examples for the Siren SDK."""
+
 # examples/basic_usage.py
 
 # This file will demonstrate basic usage of the SirenClient.
@@ -5,15 +7,16 @@
 # from siren import SirenClient # This will work once the package is installed
 
 # For local development, you might need to adjust sys.path:
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from siren.client import SirenClient
 
 if __name__ == "__main__":
     print("Running Siren SDK basic usage example...")
-    
+
     # Replace 'YOUR_API_KEY' with a real or test API key
     api_key = "YOUR_API_KEY"
     if api_key == "YOUR_API_KEY":

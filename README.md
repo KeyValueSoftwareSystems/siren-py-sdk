@@ -66,19 +66,19 @@ This guide will help you set up your environment to contribute to the `siren-ai`
     ```
 
 5.  **Set up pre-commit hooks:**
-    (Ensures code quality before commits. Run from the activated environment or use `uv run ...`)
+    (Ensures code quality before commits)
     ```bash
-    pre-commit install
+    uv run pre-commit install
     ```
     You can also run all hooks manually:
     ```bash
-    pre-commit run --all-files
+    uv run pre-commit run --all-files
     ```
 
 6.  **Run tests:**
-    (Verify the setup and SDK functionality. Run from the activated environment or use `uv run ...`)
+    (Verify the setup and SDK functionality)
     ```bash
-    pytest
+    uv run pytest
     ```
 
 7.  **Start developing!**

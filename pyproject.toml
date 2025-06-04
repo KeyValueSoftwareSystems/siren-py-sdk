@@ -100,6 +100,7 @@ ignore = [
     "D212", # Conflicts with D213 (pydocstyle: Multi-line docstring summary should start at the first line)
     # "D100", # Missing docstring in public module
     # "D104", # Missing docstring in public package
+    "E501", # Line too long (handled by formatter)
 ]
 fixable = ["ALL"]
 
