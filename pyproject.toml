@@ -1,0 +1,122 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "siren-ai"
+version = "0.1.0"
+authors = [
+  { name = "Jithu", email = "jithu@keyvalue.systems" },
+]
+description = "Python SDK for the Siren Notification Platform."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT License" } # TODO: Confirm license and consider adding a LICENSE file
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License", # Must match the license field above
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+keywords = ["siren", "notifications", "api", "sdk", "ai", "messaging", "communication"]
+
+dependencies = [
+    "requests>=2.25.0", # HTTP client library
+]
+
+[project.urls]
+"Homepage" = "https://github.com/your-username/siren-ai"  # TODO: Update URL
+"Documentation" = "https://github.com/your-username/siren-ai#readme" # TODO: Update URL (or point to actual docs)
+"Repository" = "https://github.com/your-username/siren-ai" # TODO: Update URL
+"Bug Tracker" = "https://github.com/your-username/siren-ai/issues" # TODO: Update URL
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",      # For test coverage reports
+    "requests-mock",   # For mocking HTTP requests in tests
+    "ruff",            # Linter, formatter, import sorter
+    "pyright",         # Static type checker
+    "pre-commit",      # For managing pre-commit hooks
+    "uv",              # Explicitly list if desired, often installed globally
+    # Consider adding 'build' and 'twine' for release management
+    # "build",
+    # "twine",
+]
+
+# Specifies that the 'siren' package is in the project root.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["siren*"]
+exclude = ["tests*", "examples*"] # Exclude tests and examples from the wheel
+
+# --- Tool Configurations ---
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+# Add -ra for detailed summary, -q for quieter output.
+# --cov generates coverage reports for the 'siren' package.
+addopts = "-ra -q --cov=siren --cov-report=term-missing --cov-report=xml"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.ruff]
+exclude = [
+    ".bzr", ".direnv", ".eggs", ".git", ".hg", ".mypy_cache", ".nox",
+    ".pants.d", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__",
+    "_build", "buck-out", "build", "dist", "node_modules", "venv",
+]
+line-length = 88
+indent-width = 4
+target-version = "py38" # Match requires-python
+
+[tool.ruff.lint]
+# See https://docs.astral.sh/ruff/rules/ for all rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade
+    "C90", # McCabe complexity
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    # Consider adding more, e.g.: B (flake8-bugbear), A (flake8-builtins), SIM (flake8-simplify)
+]
+ignore = [
+    "D203", # Conflicts with D211 (pydocstyle: One blank line required before class docstring)
+    "D212", # Conflicts with D213 (pydocstyle: Multi-line docstring summary should start at the first line)
+    # "D100", # Missing docstring in public module
+    # "D104", # Missing docstring in public package
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google" # Or "numpy", "pep257"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# Pyright configuration (static type checker)
+# Often works well with defaults. Can also be in 'pyrightconfig.json'.
+[tool.pyright]
+# include = ["siren"] # Files/directories to analyze
+# exclude = ["**/__pycache__", "tests", "examples", ".venv"] # Files/directories to ignore
+# reportMissingImports = true
+# pythonVersion = "3.8"
+# pythonPlatform = "Linux"

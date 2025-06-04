@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Pytest
+.pytest_cache/
+.coverage
+
+# Pyright / Pylance
+.pyright_cache*/
+
+# Ruff cache
+.ruff_cache/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Secrets / Sensitive data (examples)
+*.env
+secrets.yaml
+*.pem
+*.key

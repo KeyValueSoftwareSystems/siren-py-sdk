@@ -1,0 +1,48 @@
+# .pre-commit-config.yaml
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# Default minimum version of pre-commit to use
+# E.g. if you want to use a new feature from pre-commit
+# minimum_pre_commit_version: 2.9.0
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # Use the latest version
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: check-added-large-files
+    -   id: check-merge-conflict
+    -   id: debug-statements
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version. Optional: specify a version field to pin Ruff to a specific version.
+    rev: 'v0.4.8' # Use the latest version of ruff-pre-commit
+    hooks:
+    -   id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+    -   id: ruff-format
+
+# If you want to run pyright via pre-commit (can be slow)
+# -   repo: https://github.com/RobertCraigie/pyright-python
+#     rev: v1.1.368 # Check for latest version
+#     hooks:
+#     -   id: pyright
+        # args: [--project, pyproject.toml] # Optional: specify project file
+        # verbose: true # Optional
+
+# isort is handled by ruff's formatter and linter (I001 rule)
+# If you still want to run it separately:
+# -   repo: https://github.com/pycqa/isort
+#     rev: 5.13.2 # Use the latest version
+#     hooks:
+#       - id: isort
+#         name: isort (python)
+#         args: ["--profile", "black"]
+#       - id: isort
+#         name: isort (pyi)
+#         args: ["--profile", "black"]
+#         types: [pyi]
