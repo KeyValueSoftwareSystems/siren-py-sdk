@@ -49,6 +49,7 @@ dev = [
     "pyright",         # Static type checker
     "pre-commit",      # For managing pre-commit hooks
     "uv",              # Explicitly list if desired, often installed globally
+    "python-dotenv",   # For loading .env files
     # Consider adding 'build' and 'twine' for release management
     # "build",
     # "twine",
@@ -114,10 +115,16 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 # Pyright configuration (static type checker)
-# Often works well with defaults. Can also be in 'pyrightconfig.json'.
 [tool.pyright]
-# include = ["siren"] # Files/directories to analyze
-# exclude = ["**/__pycache__", "tests", "examples", ".venv"] # Files/directories to ignore
-# reportMissingImports = true
-# pythonVersion = "3.8"
-# pythonPlatform = "Linux"
+include = ["siren", "tests", "examples"]
+exclude = [
+    "**/__pycache__",
+    ".venv",
+    ".git",
+    ".ruff_cache",
+    # Add other typical cache/build directories if needed, e.g., "dist", "build"
+]
+reportMissingImports = true
+# reportUnusedImport = true # Optional: to report unused imports
+# pythonVersion = "3.8" # Usually inferred or can be set if specific behavior is needed
+# pythonPlatform = "Linux" # Usually inferred

@@ -1,42 +1,38 @@
 """Basic usage examples for the Siren SDK."""
 
-# examples/basic_usage.py
-
-# This file will demonstrate basic usage of the SirenClient.
-
-# from siren import SirenClient # This will work once the package is installed
-
 # For local development, you might need to adjust sys.path:
 import os
 import sys
+
+from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from siren.client import SirenClient
 
 if __name__ == "__main__":
-    print("Running Siren SDK basic usage example...")
+    load_dotenv()  # Load environment variables from .env file
 
-    # Replace 'YOUR_API_KEY' with a real or test API key
-    api_key = "YOUR_API_KEY"
-    if api_key == "YOUR_API_KEY":
-        print("Please replace 'YOUR_API_KEY' with an actual API key to test.")
-        # exit(1)
+    api_key = os.getenv("SIREN_API_KEY")
+
+    if not api_key:
+        print("Error: SIREN_API_KEY not found in .env file or environment variables.")
+        print(
+            "Please create a .env file in the project root with SIREN_API_KEY='your_key'"
+        )
+        sys.exit(1)
 
     client = SirenClient(api_key=api_key)
 
-    # Example: Send a message (this will be implemented later)
-    # try:
-    #     response = client.send_message({
-    #         "to": "user@example.com",
-    #         "template": "ai_task_completed",
-    #         "data": {
-    #             "task_name": "Data Cleanup",
-    #             "result": "Success"
-    #         }
-    #     })
-    #     print(f"Message sent successfully: {response}")
-    # except Exception as e:
-    #     print(f"Error sending message: {e}")
+    try:
+        templates_response = client.get_templates(
+            page=0, size=5
+        )  # Get first 5 templates
+        print("Successfully fetched templates:")
+        import json  # For pretty printing
 
-    print("Basic usage example finished.")
+        print(json.dumps(templates_response, indent=2))
+    except Exception as e:
+        print(f"Error fetching templates: {e}")
+
+    print("\nBasic usage example finished.")
