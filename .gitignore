@@ -34,3 +34,6 @@ Thumbs.db
 secrets.yaml
 *.pem
 *.key
+
+# windsurf rules
+.windsurfrules

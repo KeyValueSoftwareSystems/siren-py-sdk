@@ -9,6 +9,7 @@ This is the official Python SDK for the Siren notification platform.
 - [Features](#features)
   - [`get_templates()`](#get_templates)
   - [`create_template()`](#create_template)
+  - [`update_template()`](#update_template)
 - [Getting Started for Package Developers](#getting-started-for-package-developers)
 
 ## Installation
@@ -69,6 +70,32 @@ new_template_payload = {
 }
 created_template_response = client.create_template(new_template_payload)
 print(created_template_response)
+```
+
+### `update_template()`
+
+Updates an existing notification template.
+
+**Parameters:**
+*   `template_id` (str): The ID of the template to update.
+*   `template_data` (Dict[str, Any]): A dictionary containing the template fields to update. For the detailed payload structure, please refer to the official Siren API documentation.
+
+**Example:**
+```python
+# Assume 'existing_template_id' is the ID of a template you want to update
+existing_template_id = "YOUR_EXISTING_TEMPLATE_ID"
+update_payload = {
+  "name": "Updated SDK Template Name",
+  "description": "This template was updated via the SDK.",
+  "tagNames": ["sdk-updated"]
+}
+
+if existing_template_id != "YOUR_EXISTING_TEMPLATE_ID": # Basic check before running
+    updated_template_response = client.update_template(existing_template_id, update_payload)
+    print(updated_template_response)
+else:
+    print(f"Please replace 'YOUR_EXISTING_TEMPLATE_ID' with an actual ID to run the update_template example.")
+
 ```
 
 ## Getting Started for Package Developers

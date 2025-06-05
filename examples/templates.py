@@ -52,6 +52,34 @@ def run_create_template_example(client: SirenClient):
         print(f"Error creating template: {e}")
 
 
+def run_update_template_example(client: SirenClient):
+    """Runs the example for updating a template."""
+    print("\n--- Updating a Template ---")
+    # IMPORTANT: Replace with an actual template ID from your account to test.
+    template_id_to_update = "dc58f20d-bad1-4ffd-8f92-34682397100f"
+    update_payload = {
+        "name": "Updated_SDK_Example_Template",
+        "description": "This template was updated by the examples/templates.py script.",
+        "tagNames": ["sdk-example", "update-op"],
+        "variables": [{"name": "customer_name", "defaultValue": "Valued Customer"}],
+        "configurations": {
+            "EMAIL": {
+                "subject": "Updated Subject for {{customer_name}}",
+                "body": "<p>Hello {{customer_name}}, your template has been updated!</p>",
+            }
+        },
+    }
+
+    try:
+        updated_template_response = client.update_template(
+            template_id_to_update, update_payload
+        )
+        print(f"Successfully updated template '{template_id_to_update}':")
+        print(json.dumps(updated_template_response, indent=2))
+    except Exception as e:
+        print(f"Error updating template '{template_id_to_update}': {e}")
+
+
 if __name__ == "__main__":
     load_dotenv()
 
@@ -65,5 +93,6 @@ if __name__ == "__main__":
 
     siren_client = SirenClient(api_key=api_key)
 
-    run_get_templates_example(siren_client)
+    # run_get_templates_example(siren_client)
     # run_create_template_example(siren_client)
+    run_update_template_example(siren_client)

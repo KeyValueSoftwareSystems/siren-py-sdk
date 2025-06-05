@@ -97,3 +97,38 @@ class TemplatesManager:
                 raise http_err
         except requests.exceptions.RequestException as req_err:
             raise req_err
+
+    def update_template(
+        self, template_id: str, template_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an existing template.
+
+        Args:
+            template_id: The ID of the template to update.
+            template_data: A dictionary containing the template details to update.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template/{template_id}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.put(
+                endpoint, headers=headers, json=template_data, timeout=10
+            )
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX status codes
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            # Try to return the JSON error response from the API if available
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                # If the error response isn't JSON, re-raise the original HTTPError
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            # For other network issues (e.g., connection error)
+            raise req_err

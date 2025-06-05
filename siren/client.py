@@ -32,8 +32,6 @@ class SirenClient:
     ) -> Dict[str, Any]:
         """Fetch templates.
 
-        Delegates to TemplatesManager.get_templates.
-
         Args:
             tag_names: Filter by tag names.
             search: Search by field.
@@ -55,8 +53,6 @@ class SirenClient:
     def create_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new template.
 
-        Delegates to TemplatesManager.create_template.
-
         Args:
             template_data: A dictionary containing the template details.
 
@@ -64,3 +60,19 @@ class SirenClient:
             A dictionary containing the API response.
         """
         return self._templates.create_template(template_data=template_data)
+
+    def update_template(
+        self, template_id: str, template_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an existing template.
+
+        Args:
+            template_id: The ID of the template to update.
+            template_data: A dictionary containing the template details to update.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._templates.update_template(
+            template_id=template_id, template_data=template_data
+        )
