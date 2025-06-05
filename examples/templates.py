@@ -148,6 +148,28 @@ def run_create_channel_configurations_example(client: SirenClient):
         )
 
 
+def run_get_channel_templates_example(client: SirenClient):
+    """Runs the example for fetching channel templates for a template version."""
+    print("\n--- Fetching Channel Templates for a Version ---")
+    version_id_to_fetch = "9138125c-d242-4b17-ae0e-16ade9d06568"
+
+    try:
+        response = client.get_channel_templates(
+            version_id=version_id_to_fetch,
+            page=0,  # Optional: get the first page
+            size=5,  # Optional: get up to 5 channel templates
+        )
+        if response and response.get("error") is None:
+            print(
+                f"Successfully fetched channel templates for version '{version_id_to_fetch}':"
+            )
+        print(json.dumps(response, indent=2))
+    except Exception as e:
+        print(
+            f"Error fetching channel templates for version '{version_id_to_fetch}': {e}"
+        )
+
+
 if __name__ == "__main__":
     load_dotenv()
 
@@ -167,3 +189,4 @@ if __name__ == "__main__":
     # run_delete_template_example(siren_client)
     # run_publish_template_example(siren_client)
     # run_create_channel_configurations_example(siren_client)
+    run_get_channel_templates_example(siren_client)

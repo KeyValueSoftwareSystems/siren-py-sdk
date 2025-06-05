@@ -531,16 +531,145 @@ def test_create_channel_configurations_http_error_non_json_response(
     client, requests_mock
 ):
     """Test HTTP error with non-JSON response for channel configurations."""
-    template_id = "tpl_http_non_json"
-    mock_request_payload = {"SMS": {"body": "test"}}
+    template_id = "tpl_non_json_error"
+    mock_request_payload = {
+        "EMAIL": {"subject": "Test", "body": "Body", "channel": "EMAIL"}
+    }
     requests_mock.post(
         f"{client._templates.base_url}/template/{template_id}/channel-templates",
-        text="Internal Server Error - Not JSON",  # Non-JSON response
+        text="<HTML><BODY>Internal Server Error</BODY></HTML>",
         status_code=500,
     )
 
     with pytest.raises(requests.exceptions.HTTPError) as excinfo:
         client.create_channel_configurations(template_id, mock_request_payload)
+    assert "500 Server Error" in str(excinfo.value)
+    assert (
+        "<HTML><BODY>Internal Server Error</BODY></HTML>" in excinfo.value.response.text
+    )
 
-    assert excinfo.value.response.status_code == 500
-    assert "Internal Server Error - Not JSON" in excinfo.value.response.text
+
+def test_get_channel_templates_success(client, requests_mock):
+    """Test successful retrieval of channel templates for a version."""
+    version_id = "ver_123xyz"
+    mock_response_data = {
+        "data": {
+            "content": [
+                {"channel": "SMS", "configuration": {"channel": "SMS"}},
+                {"channel": "EMAIL", "configuration": {"channel": "EMAIL"}},
+            ],
+            "totalElements": 2,
+        }
+    }
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        json=mock_response_data,
+        status_code=200,
+    )
+
+    response = client.get_channel_templates(version_id=version_id)
+    assert response == mock_response_data
+    assert len(response["data"]["content"]) == 2
+    assert requests_mock.last_request.qs == {}
+
+
+def test_get_channel_templates_success_with_params(client, requests_mock):
+    """Test successful retrieval of channel templates with query parameters."""
+    version_id = "ver_456abc"
+    mock_response_data = {
+        "data": {"content": [{"channel": "PUSH", "configuration": {"channel": "PUSH"}}]}
+    }
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        json=mock_response_data,
+        status_code=200,
+    )
+
+    response = client.get_channel_templates(
+        version_id=version_id,
+        channel="PUSH",
+        search="config_detail",
+        sort="channel,asc",
+        page=1,
+        size=5,
+    )
+    assert response == mock_response_data
+    assert requests_mock.last_request.qs == {
+        "channel": ["push"],  # Changed to lowercase
+        "search": ["config_detail"],
+        "sort": ["channel,asc"],
+        "page": ["1"],
+        "size": ["5"],
+    }
+
+
+def test_get_channel_templates_bad_request_error(client, requests_mock):
+    """Test 400 Bad Request error for get_channel_templates."""
+    version_id = "ver_invalid_format"
+    error_response_data = {
+        "error": {"errorCode": "BAD_REQUEST", "message": "Invalid version ID format"}
+    }
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        json=error_response_data,
+        status_code=400,
+    )
+    response = client.get_channel_templates(version_id=version_id)
+    assert response == error_response_data
+
+
+def test_get_channel_templates_unauthorized_error(client, requests_mock):
+    """Test 401 Unauthorized error for get_channel_templates."""
+    version_id = "ver_789def"
+    error_response_data = {
+        "error": {"errorCode": "UNAUTHORISED", "message": "Invalid API Key"}
+    }
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        json=error_response_data,
+        status_code=401,
+    )
+    response = client.get_channel_templates(version_id=version_id)
+    assert response == error_response_data
+
+
+def test_get_channel_templates_not_found_error(client, requests_mock):
+    """Test 404 Not Found error for get_channel_templates."""
+    version_id = "ver_not_exists"
+    error_response_data = {
+        "error": {"errorCode": "NOT_FOUND", "message": "Version not found"}
+    }
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        json=error_response_data,
+        status_code=404,
+    )
+    response = client.get_channel_templates(version_id=version_id)
+    assert response == error_response_data
+
+
+def test_get_channel_templates_network_error(client, requests_mock):
+    """Test network error for get_channel_templates."""
+    version_id = "ver_network_issue"
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        exc=requests.exceptions.ConnectionError,
+    )
+    with pytest.raises(requests.exceptions.ConnectionError):
+        client.get_channel_templates(version_id=version_id)
+
+
+def test_get_channel_templates_http_error_non_json_response(client, requests_mock):
+    """Test HTTP error with non-JSON response for get_channel_templates."""
+    version_id = "ver_html_error"
+    requests_mock.get(
+        f"{client._templates.base_url}/template/versions/{version_id}/channel-templates",
+        text="<HTML><BODY>Internal Server Error</BODY></HTML>",
+        status_code=500,
+    )
+    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        client.get_channel_templates(version_id=version_id)
+    assert "500 Server Error" in str(excinfo.value)
+    assert (
+        "<HTML><BODY>Internal Server Error</BODY></HTML>" in excinfo.value.response.text
+    )

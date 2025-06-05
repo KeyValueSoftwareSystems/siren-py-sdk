@@ -13,6 +13,7 @@ This is the official Python SDK for the Siren notification platform.
   - [`delete_template()`](#delete_template)
   - [`publish_template()`](#publish_template)
   - [`create_channel_configurations()`](#create_channel_configurations)
+  - [`get_channel_templates()`](#get_channel_templates)
 - [Getting Started for Package Developers](#getting-started-for-package-developers)
 
 ## Installation
@@ -154,6 +155,38 @@ channel_configs_payload = {
 
 response = client.create_channel_configurations(template_id, channel_configs_payload)
 print(response)
+```
+
+### `get_channel_templates()`
+
+Retrieves channel-specific configurations for a specific version of a notification template.
+
+**Parameters:**
+*   `version_id` (str): The ID of the template version for which to fetch channel templates.
+*   Optional query parameters:
+    *   `channel` (str): Filter by a specific channel (e.g., "EMAIL", "SMS").
+    *   `search` (str): Search term to filter channel templates.
+    *   `sort` (str): Sort order (e.g., "channel,asc").
+    *   `page` (int): Page number for pagination.
+    *   `size` (int): Number of items per page.
+
+**Example:**
+```python
+# Replace with an actual template version ID
+template_version_id = "YOUR_TEMPLATE_VERSION_ID"
+
+# Get all channel templates for a version
+channel_templates_response = client.get_channel_templates(version_id=template_version_id)
+print(channel_templates_response)
+
+# Get SMS channel templates for a version, first page, 5 items
+sms_channel_templates = client.get_channel_templates(
+    version_id=template_version_id,
+    channel="SMS",
+    page=0,
+    size=5
+)
+print(sms_channel_templates)
 ```
 
 ## Getting Started for Package Developers

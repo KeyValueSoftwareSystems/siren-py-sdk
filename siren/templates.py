@@ -228,3 +228,58 @@ class TemplatesManager:
                 raise http_err
         except requests.exceptions.RequestException as req_err:
             raise req_err
+
+    def get_channel_templates(
+        self,
+        version_id: str,
+        channel: Optional[str] = None,
+        search: Optional[str] = None,
+        sort: Optional[str] = None,
+        page: Optional[int] = None,
+        size: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Fetch channel templates for a specific template version.
+
+        Args:
+            version_id: The ID of the template version.
+            channel: Filter by channel type (e.g., "EMAIL", "SMS").
+            search: Search by field.
+            sort: Sort by field.
+            page: Page number.
+            size: Page size.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template/versions/{version_id}/channel-templates"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+        params: Dict[str, Any] = {}
+        if channel is not None:
+            params["channel"] = channel
+        if search is not None:
+            params["search"] = search
+        if sort is not None:
+            params["sort"] = sort
+        if page is not None:
+            params["page"] = page
+        if size is not None:
+            params["size"] = size
+
+        try:
+            response = requests.get(
+                endpoint, headers=headers, params=params, timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                # If the error response isn't JSON, re-raise the original HTTPError
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            # For other network issues (e.g., connection error)
+            raise req_err
