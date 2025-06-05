@@ -76,3 +76,14 @@ class SirenClient:
         return self._templates.update_template(
             template_id=template_id, template_data=template_data
         )
+
+    def delete_template(self, template_id: str) -> Dict[str, Any]:
+        """Delete an existing template.
+
+        Args:
+            template_id: The ID of the template to delete.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._templates.delete_template(template_id=template_id)

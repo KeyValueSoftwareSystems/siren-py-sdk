@@ -225,3 +225,73 @@ def test_update_template_network_error(client, requests_mock):
 
     with pytest.raises(requests.exceptions.ConnectTimeout):
         client.update_template(template_id, mock_request_payload)
+
+
+def test_delete_template_success(client, requests_mock):
+    """Test successful deletion of a template (204 No Content)."""
+    template_id = "tpl_todelete123"
+    expected_response_data = {
+        "status": "success",
+        "message": f"Template {template_id} deleted successfully.",
+    }
+    requests_mock.delete(
+        f"{client._templates.base_url}/template/{template_id}",
+        text="",  # Empty body for 204
+        status_code=204,
+    )
+
+    response = client.delete_template(template_id)
+    assert response == expected_response_data
+    assert requests_mock.last_request.method == "DELETE"
+
+
+def test_delete_template_not_found_error(client, requests_mock):
+    """Test handling of a 404 Not Found error when deleting a template."""
+    template_id = "tpl_notfound404"
+    error_response_data = {
+        "data": None,
+        "error": {"errorCode": "NOT_FOUND", "message": "Template not found"},
+        "errors": [
+            {
+                "errorCode": "NOT_FOUND",
+                "message": f"Template with id {template_id} not found",
+            }
+        ],
+        "meta": None,
+    }
+    requests_mock.delete(
+        f"{client._templates.base_url}/template/{template_id}",
+        json=error_response_data,
+        status_code=404,
+    )
+
+    response = client.delete_template(template_id)
+    assert response == error_response_data
+
+
+def test_delete_template_unauthorized_error(client, requests_mock):
+    """Test handling of a 401 Unauthorized error when deleting a template."""
+    template_id = "tpl_unauth401"
+    error_response_data = {
+        "error": {"errorCode": "UNAUTHORISED", "message": "Invalid API Key"}
+    }
+    requests_mock.delete(
+        f"{client._templates.base_url}/template/{template_id}",
+        json=error_response_data,
+        status_code=401,
+    )
+
+    response = client.delete_template(template_id)
+    assert response == error_response_data
+
+
+def test_delete_template_network_error(client, requests_mock):
+    """Test handling of a network error when deleting a template."""
+    template_id = "tpl_network_error"
+    requests_mock.delete(
+        f"{client._templates.base_url}/template/{template_id}",
+        exc=requests.exceptions.ConnectTimeout,
+    )
+
+    with pytest.raises(requests.exceptions.ConnectTimeout):
+        client.delete_template(template_id)

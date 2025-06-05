@@ -132,3 +132,35 @@ class TemplatesManager:
         except requests.exceptions.RequestException as req_err:
             # For other network issues (e.g., connection error)
             raise req_err
+
+    def delete_template(self, template_id: str) -> Dict[str, Any]:
+        """Delete an existing template.
+
+        Args:
+            template_id: The ID of the template to delete.
+
+        Returns:
+            A dictionary containing the API response (e.g., a confirmation message).
+        """
+        endpoint = f"{self.base_url}/template/{template_id}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.delete(endpoint, headers=headers, timeout=10)
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX status codes
+            if response.status_code == 204:
+                return {
+                    "status": "success",
+                    "message": f"Template {template_id} deleted successfully.",
+                }
+            # For other successful responses (e.g., 200 OK with a body, though not expected for DELETE here)
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err

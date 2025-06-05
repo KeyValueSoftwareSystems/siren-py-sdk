@@ -10,6 +10,7 @@ This is the official Python SDK for the Siren notification platform.
   - [`get_templates()`](#get_templates)
   - [`create_template()`](#create_template)
   - [`update_template()`](#update_template)
+  - [`delete_template()`](#delete_template)
 - [Getting Started for Package Developers](#getting-started-for-package-developers)
 
 ## Installation
@@ -95,6 +96,27 @@ if existing_template_id != "YOUR_EXISTING_TEMPLATE_ID": # Basic check before run
     print(updated_template_response)
 else:
     print(f"Please replace 'YOUR_EXISTING_TEMPLATE_ID' with an actual ID to run the update_template example.")
+
+```
+
+### `delete_template()`
+
+Deletes an existing notification template.
+
+**Parameters:**
+*   `template_id` (str): The ID of the template to delete.
+
+**Example:**
+```python
+# Assume 'template_id_to_delete' is the ID of a template you want to permanently delete
+template_id_to_delete = "YOUR_TEMPLATE_ID_TO_DELETE"
+
+if template_id_to_delete != "YOUR_TEMPLATE_ID_TO_DELETE": # Basic check before running
+    # Consider adding a confirmation step in real applications before deleting
+    delete_response = client.delete_template(template_id_to_delete)
+    print(delete_response)
+else:
+    print(f"Please replace 'YOUR_TEMPLATE_ID_TO_DELETE' with an actual ID to run the delete_template example.")
 
 ```
 

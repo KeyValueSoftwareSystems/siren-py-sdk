@@ -80,6 +80,21 @@ def run_update_template_example(client: SirenClient):
         print(f"Error updating template '{template_id_to_update}': {e}")
 
 
+def run_delete_template_example(client: SirenClient):
+    """Runs the example for deleting a template."""
+    print("\n--- Deleting a Template ---")
+    template_id_to_delete = "b5d4cdf8-a46a-4867-aa02-c7551d3fe747"
+
+    try:
+        delete_response = client.delete_template(template_id_to_delete)
+        print(
+            f"Successfully sent delete request for template '{template_id_to_delete}':"
+        )
+        print(json.dumps(delete_response, indent=2))
+    except Exception as e:
+        print(f"Error deleting template '{template_id_to_delete}': {e}")
+
+
 if __name__ == "__main__":
     load_dotenv()
 
@@ -95,4 +110,5 @@ if __name__ == "__main__":
 
     # run_get_templates_example(siren_client)
     # run_create_template_example(siren_client)
-    run_update_template_example(siren_client)
+    # run_update_template_example(siren_client)
+    run_delete_template_example(siren_client)
