@@ -1,5 +1,99 @@
-"""Template management for Siren SDK."""
+"""Template management for the Siren SDK."""
 
-# siren/templates.py
+from typing import Any, Dict, Optional
 
-# This module will handle template-related functionalities.
+import requests
+
+
+class TemplatesManager:
+    """Manages template-related operations for the Siren API."""
+
+    def __init__(self, api_key: str, base_url: str):
+        """Initialize the TemplatesManager.
+
+        Args:
+            api_key: The API key for authentication.
+            base_url: The base URL for the Siren API.
+        """
+        self.api_key = api_key
+        self.base_url = base_url
+
+    def get_templates(
+        self,
+        tag_names: Optional[str] = None,
+        search: Optional[str] = None,
+        sort: Optional[str] = None,
+        page: Optional[int] = None,
+        size: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Fetch templates.
+
+        Args:
+            tag_names: Filter by tag names.
+            search: Search by field.
+            sort: Sort by field.
+            page: Page number.
+            size: Page size.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+        params: Dict[str, Any] = {}
+        if tag_names is not None:
+            params["tagNames"] = tag_names
+        if search is not None:
+            params["search"] = search
+        if sort is not None:
+            params["sort"] = sort
+        if page is not None:
+            params["page"] = page
+        if size is not None:
+            params["size"] = size
+
+        try:
+            response = requests.get(
+                endpoint, headers=headers, params=params, timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err
+
+    def create_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new template.
+
+        Args:
+            template_data: A dictionary containing the template details.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.post(
+                endpoint, headers=headers, json=template_data, timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err

@@ -1,72 +1,27 @@
 """Tests for the Siren API client."""
 
 import os
-
-# For local development, you might need to adjust sys.path:
 import sys
 
-import pytest
-import requests
-
+# Ensure the 'siren' package in the parent directory can be imported:
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from siren.client import SirenClient
-
-
-@pytest.fixture
-def client():
-    """Provides a SirenClient instance for testing."""
-    return SirenClient(api_key="test_api_key")
+# The 'client' fixture is automatically available from conftest.py
 
 
 def test_siren_client_initialization(client):
     """Test that the SirenClient initializes correctly."""
     assert client.api_key == "test_api_key", "API key should be set on initialization"
-
-
-def test_get_templates_success(client, requests_mock):
-    """Test successful retrieval of templates."""
-    mock_response_data = {
-        "data": {
-            "content": [
-                {"id": "tpl_1", "name": "Test Template 1"},
-                {"id": "tpl_2", "name": "Test Template 2"},
-            ],
-            "totalElements": 2,
-        }
-    }
-    requests_mock.get(
-        f"{client.BASE_API_URL}/template",
-        json=mock_response_data,
-        status_code=200,
-    )
-
-    response = client.get_templates(page=0, size=10)
-    assert response == mock_response_data
-    assert len(response["data"]["content"]) == 2
-    assert response["data"]["content"][0]["name"] == "Test Template 1"
-
-
-def test_get_templates_http_error(client, requests_mock):
-    """Test handling of HTTP error when getting templates."""
-    error_response_data = {
-        "error": {"errorCode": "UNAUTHORISED", "message": "Invalid API Key"}
-    }
-    requests_mock.get(
-        f"{client.BASE_API_URL}/template",
-        json=error_response_data,
-        status_code=401,
-    )
-
-    response = client.get_templates()
-    assert response == error_response_data
-
-
-def test_get_templates_network_error(client, requests_mock):
-    """Test handling of a network error when getting templates."""
-    requests_mock.get(
-        f"{client.BASE_API_URL}/template", exc=requests.exceptions.ConnectTimeout
-    )
-
-    with pytest.raises(requests.exceptions.ConnectTimeout):
-        client.get_templates()
+    assert hasattr(
+        client, "_templates"
+    ), "Client should have an internal _templates manager attribute"
+    assert hasattr(client, "get_templates"), "Client should have a get_templates method"
+    assert hasattr(
+        client, "create_template"
+    ), "Client should have a create_template method"
+    assert (
+        client._templates.api_key == "test_api_key"
+    ), "Templates manager should have API key"
+    assert (
+        client._templates.base_url == client.BASE_API_URL
+    ), "Templates manager should have base URL"

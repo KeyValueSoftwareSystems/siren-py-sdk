@@ -2,6 +2,15 @@
 
 This is the official Python SDK for the Siren notification platform.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Features](#features)
+  - [`get_templates()`](#get_templates)
+  - [`create_template()`](#create_template)
+- [Getting Started for Package Developers](#getting-started-for-package-developers)
+
 ## Installation
 
 ```bash
@@ -13,19 +22,53 @@ pip install siren-ai
 ```python
 from siren import SirenClient
 
-client = SirenClient(api_key="YOUR_API_KEY")
+# Initialize the client by passing your API key:
+client = SirenClient(api_key="YOUR_SIREN_API_KEY")
 
-# Example: Send a message
-response = client.send_message({
-    "to": "user@example.com",
-    "template": "ai_task_completed",
-    "data": {
-        "task_name": "Data Cleanup",
-        "result": "Success"
+# Example: Get templates
+# Get the first 5 templates
+templates_response = client.get_templates(page=0, size=5)
+print(templates_response)
+```
+
+## Features
+
+The Siren-AI Python SDK provides an interface to interact with the Siren API.
+
+### `get_templates()`
+
+Retrieves a list of notification templates.
+
+**Parameters:**
+*   Supports optional filtering (`tag_names`, `search`), sorting (`sort`), and pagination (`page`, `size`). Refer to the official Siren API documentation for detailed parameter usage.
+
+**Example:**
+```python
+# Get 5 templates, sorted by name
+templates_response = client.get_templates(size=5, sort="name,asc")
+print(templates_response)
+```
+
+### `create_template()`
+
+Creates a new notification template.
+
+**Parameters:**
+*   `template_data` (Dict[str, Any]): A dictionary representing the template structure. Key fields include `name`, `configurations`, etc. For the detailed payload structure, please refer to the official Siren API documentation.
+
+**Example:**
+```python
+new_template_payload = {
+  "name": "SDK_Quick_Template",
+  "configurations": {
+    "EMAIL": {
+      "subject": "Quick Test",
+      "body": "<p>Hello via SDK!</p>"
     }
-})
-
-print(response)
+  }
+}
+created_template_response = client.create_template(new_template_payload)
+print(created_template_response)
 ```
 
 ## Getting Started for Package Developers
@@ -42,7 +85,7 @@ This guide will help you set up your environment to contribute to the `siren-ai`
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/siren-ai.git # TODO: Update with actual repo URL
+    git clone https://github.com/jithu-keyvalue/siren-ai.git
     cd siren-ai
     ```
 
@@ -94,11 +137,3 @@ This guide will help you set up your environment to contribute to the `siren-ai`
 *   Create a feature branch for your changes.
 *   Commit your changes (pre-commit hooks will run).
 *   Push your branch and open a Pull Request against the main repository branch.
-
-## Contributing
-
-Contribution guidelines will be added here.
-
-## License
-
-This project will be licensed under the [Specify License, e.g., MIT License].

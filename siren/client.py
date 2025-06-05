@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Optional
 
-import requests
+from .templates import TemplatesManager
 
 
 class SirenClient:
@@ -18,6 +18,9 @@ class SirenClient:
             api_key: The API key for authentication.
         """
         self.api_key = api_key
+        self._templates = TemplatesManager(
+            api_key=self.api_key, base_url=self.BASE_API_URL
+        )
 
     def get_templates(
         self,
@@ -29,6 +32,8 @@ class SirenClient:
     ) -> Dict[str, Any]:
         """Fetch templates.
 
+        Delegates to TemplatesManager.get_templates.
+
         Args:
             tag_names: Filter by tag names.
             search: Search by field.
@@ -39,35 +44,23 @@ class SirenClient:
         Returns:
             A dictionary containing the API response.
         """
-        endpoint = f"{self.BASE_API_URL}/template"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Accept": "application/json",
-        }
-        params: Dict[str, Any] = {}
-        if tag_names is not None:
-            params["tagNames"] = tag_names
-        if search is not None:
-            params["search"] = search
-        if sort is not None:
-            params["sort"] = sort
-        if page is not None:
-            params["page"] = page
-        if size is not None:
-            params["size"] = size
+        return self._templates.get_templates(
+            tag_names=tag_names,
+            search=search,
+            sort=sort,
+            page=page,
+            size=size,
+        )
 
-        try:
-            response = requests.get(
-                endpoint, headers=headers, params=params, timeout=10
-            )
-            response.raise_for_status()  # Raises HTTPError for bad responses (4XX or 5XX)
-            return response.json()
-        except requests.exceptions.HTTPError as http_err:
-            # Attempt to return JSON error from response, otherwise re-raise HTTPError
-            try:
-                return http_err.response.json()
-            except requests.exceptions.JSONDecodeError:
-                raise http_err
-        except requests.exceptions.RequestException as req_err:
-            # For non-HTTP request issues (e.g., network, timeout)
-            raise req_err
+    def create_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new template.
+
+        Delegates to TemplatesManager.create_template.
+
+        Args:
+            template_data: A dictionary containing the template details.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._templates.create_template(template_data=template_data)
