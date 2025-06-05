@@ -153,3 +153,168 @@ def test_trigger_workflow_http_error_non_json_response(
     assert non_json_error_text in str(excinfo.value)
     assert excinfo.value.response is not None
     assert excinfo.value.response.status_code == 503
+
+
+# --- Tests for trigger_bulk_workflow --- #
+
+BULK_WORKFLOW_NAME = "test_bulk_otp_workflow"
+
+
+def test_trigger_bulk_workflow_success_with_all_params(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow with all parameters successfully."""
+    request_notify_list = [
+        {"notificationType": "email", "recipient": "bulk1@example.com"},
+        {"notificationType": "sms", "recipient": "+12345678901"},
+    ]
+    request_data = {"common_field": "common_value"}
+    expected_response = {
+        "data": {
+            "requestId": "d4e5f6a7-b8c9-d0e1-f2a3-b4c5d6e7f8a9",
+            "workflowExecutionIds": [
+                "e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8a9b0",
+                "f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8a9b0c1",
+            ],
+        },
+        "error": None,
+        "errors": None,
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+
+    requests_mock.post(mock_url, json=expected_response, status_code=200)
+
+    response = client.trigger_bulk_workflow(
+        workflow_name=BULK_WORKFLOW_NAME,
+        notify=request_notify_list,
+        data=request_data,
+    )
+
+    assert response == expected_response
+    history = requests_mock.request_history
+    assert len(history) == 1
+    assert history[0].method == "POST"
+    assert history[0].url == mock_url
+    assert history[0].json() == {
+        "workflowName": BULK_WORKFLOW_NAME,
+        "notify": request_notify_list,
+        "data": request_data,
+    }
+    assert history[0].headers["Authorization"] == f"Bearer {API_KEY}"
+
+
+def test_trigger_bulk_workflow_success_minimal_params(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow with minimal parameters (workflow_name, notify) successfully."""
+    request_notify_list = [
+        {"notificationType": "email", "recipient": "minimal_bulk@example.com"}
+    ]
+    expected_response = {
+        "data": {
+            "requestId": "uuid_bulk_req",
+            "workflowExecutionIds": ["uuid_bulk_exec1"],
+        },
+        "error": None,
+        "errors": None,
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    requests_mock.post(mock_url, json=expected_response, status_code=200)
+
+    response = client.trigger_bulk_workflow(
+        workflow_name=BULK_WORKFLOW_NAME, notify=request_notify_list
+    )
+
+    assert response == expected_response
+    history = requests_mock.request_history
+    assert len(history) == 1
+    assert history[0].json() == {
+        "workflowName": BULK_WORKFLOW_NAME,
+        "notify": request_notify_list,
+    }
+
+
+def test_trigger_bulk_workflow_http_400_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow handles HTTP 400 Bad Request error."""
+    error_response = {
+        "data": None,
+        "error": {"errorCode": "BAD_REQUEST", "message": "Invalid notify payload"},
+        "errors": [{"errorCode": "BAD_REQUEST", "message": "Invalid notify payload"}],
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    requests_mock.post(mock_url, json=error_response, status_code=400)
+
+    response = client.trigger_bulk_workflow(
+        workflow_name=BULK_WORKFLOW_NAME,
+        notify=[{}],  # Example invalid notify
+    )
+    assert response == error_response
+
+
+def test_trigger_bulk_workflow_http_401_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow handles HTTP 401 Unauthorized error."""
+    error_response = {"detail": "Authentication credentials were not provided."}
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    requests_mock.post(mock_url, json=error_response, status_code=401)
+
+    response = client.trigger_bulk_workflow(
+        workflow_name=BULK_WORKFLOW_NAME, notify=[{"recipient": "test@example.com"}]
+    )
+    assert response == error_response
+
+
+def test_trigger_bulk_workflow_http_404_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow handles HTTP 404 Not Found error for the workflow."""
+    error_response = {"detail": "Workflow not found."}
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    requests_mock.post(mock_url, json=error_response, status_code=404)
+
+    response = client.trigger_bulk_workflow(
+        workflow_name="non_existent_bulk_workflow",
+        notify=[{"recipient": "test@example.com"}],
+    )
+    assert response == error_response
+
+
+def test_trigger_bulk_workflow_network_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow handles a network error."""
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    requests_mock.post(
+        mock_url, exc=requests.exceptions.ConnectionError("Bulk connection failed")
+    )
+
+    with pytest.raises(requests.exceptions.RequestException):
+        client.trigger_bulk_workflow(
+            workflow_name=BULK_WORKFLOW_NAME,
+            notify=[{"recipient": "test@example.com"}],
+        )
+
+
+def test_trigger_bulk_workflow_http_error_non_json_response(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test trigger_bulk_workflow handles HTTP error with non-JSON response."""
+    mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
+    non_json_error_text = "Bulk Service Unavailable"
+    requests_mock.post(mock_url, text=non_json_error_text, status_code=503)
+
+    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        client.trigger_bulk_workflow(
+            workflow_name=BULK_WORKFLOW_NAME,
+            notify=[{"recipient": "test@example.com"}],
+        )
+
+    assert non_json_error_text in str(excinfo.value)
+    assert excinfo.value.response is not None
+    assert excinfo.value.response.status_code == 503

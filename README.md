@@ -1,6 +1,6 @@
 # Siren AI Python SDK (`siren-ai`)
 
-This is the official Python SDK for the Siren notification platform.
+This is the official Python SDK for the [Siren notification platform](https://docs.trysiren.io).
 
 ## Table of Contents
 
@@ -17,10 +17,12 @@ This is the official Python SDK for the Siren notification platform.
     - [`create_channel_configurations()`](#create_channel_configurations)
     - [`get_channel_templates()`](#get_channel_templates)
     - [`trigger_workflow()`](#trigger_workflow)
+    - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
     - [Prerequisites](#prerequisites)
     - [Setup Steps](#setup-steps)
     - [Code Style \& Linting](#code-style--linting)
+    - [Running Tests](#running-tests)
     - [Submitting Changes](#submitting-changes)
   - [Future Enhancements](#future-enhancements)
 
@@ -231,6 +233,59 @@ minimal_trigger_response = client.trigger_workflow(workflow_name="simple_workflo
 print(minimal_trigger_response)
 ```
 
+### `trigger_bulk_workflow()`
+
+Triggers a specified workflow in bulk for multiple recipients/notifications, with common data applied to all and specific data for each notification.
+
+**Parameters:**
+*   `workflow_name` (str): The name of the workflow to be executed.
+*   `notify` (List[Dict[str, Any]]): A list of notification objects. Your workflow will be executed for each object in this list. Each object contains specific data for that particular workflow execution.
+*   `data` (Optional[Dict[str, Any]]): Common data that will be used across all workflow executions. Defaults to `None`.
+
+**Example:**
+```python
+workflow_to_trigger_bulk = "onboarding_sequence"
+common_payload = {
+  "campaign_source": "webinar_signup_2024"
+}
+individual_notifications = [
+    {
+      "notificationType": "email",
+      "recipient": "user_a@example.com",
+      "name": "Alex",
+      "join_date": "2024-06-01"
+    },
+    {
+      "notificationType": "sms",
+      "recipient": "+15550001111",
+      "segment": "trial_user"
+    },
+    {
+      "notificationType": "email",
+      "recipient": "user_b@example.com",
+      "name": "Beth",
+      "join_date": "2024-06-02"
+    }
+]
+
+bulk_response = client.trigger_bulk_workflow(
+    workflow_name=workflow_to_trigger_bulk,
+    notify=individual_notifications,
+    data=common_payload
+)
+print(bulk_response)
+
+# Example: Bulk triggering with only notify list (no common data)
+minimal_bulk_response = client.trigger_bulk_workflow(
+    workflow_name="simple_bulk_actions",
+    notify=[
+        {"action": "activate_feature_x", "user_id": "user_c@example.com"},
+        {"action": "send_survey_y", "user_id": "user_d@example.com"}
+    ]
+)
+print(minimal_bulk_response)
+```
+
 ## Getting Started for Package Developers
 
 This guide will help you set up your environment to contribute to the `siren-ai` SDK.
@@ -273,24 +328,23 @@ This guide will help you set up your environment to contribute to the `siren-ai`
     ```bash
     uv run pre-commit install
     ```
-    You can also run all hooks manually:
-    ```bash
-    uv run pre-commit run --all-files
-    ```
 
-6.  **Run tests:**
-    (Verify the setup and SDK functionality)
-    ```bash
-    uv run pytest
-    ```
-
-7.  **Start developing!**
-    You are now ready to contribute to the `siren-ai` SDK.
+    You are now ready to contribute to the `siren-ai` SDK!
 
 ### Code Style & Linting
 
 *   Code style is enforced by `ruff` (linting, formatting, import sorting) and `pyright` (type checking).
 *   These tools are automatically run via pre-commit hooks.
+
+### Running Tests
+
+To run the test suite, use the following command from the project root directory:
+
+```bash
+uv run pytest
+```
+
+This will execute all tests defined in the `tests/` directory.
 
 ### Submitting Changes
 
@@ -300,4 +354,6 @@ This guide will help you set up your environment to contribute to the `siren-ai`
 
 ## Future Enhancements
 
-*   **Response Models:** Introduce Pydantic models for API responses to provide a more object-oriented interface and stronger type guarantees.
+- Expand SDK for full Siren API endpoint coverage.
+- Implement typed response models (e.g., Pydantic) for robust data handling.
+- Introduce custom SDK exceptions for improved error diagnostics.

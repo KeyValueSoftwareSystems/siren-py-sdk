@@ -1,6 +1,6 @@
 """Workflow management for Siren SDK."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -68,4 +68,59 @@ class WorkflowsManager:
                 raise new_err from http_err
         except requests.exceptions.RequestException as req_err:
             # For other request errors (e.g., connection issues)
+            raise req_err
+
+    def trigger_bulk_workflow(
+        self,
+        workflow_name: str,
+        notify: List[
+            Dict[str, Any]
+        ],  # notify is a list of dicts and is required for bulk
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Triggers a workflow in bulk for multiple recipients/notifications.
+
+        Args:
+            workflow_name: The name of the workflow to execute.
+            notify: A list of notification objects, each representing specific data
+                    for a workflow execution. The workflow will be executed for
+                    each element in this list.
+            data: Common data that will be used across all workflow executions.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/workflows/trigger/bulk"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        payload: Dict[str, Any] = {
+            "workflowName": workflow_name,
+            "notify": notify,  # notify is now a list
+        }
+        if data is not None:
+            payload["data"] = data
+
+        try:
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                json=payload,
+                timeout=20,  # Increased timeout for bulk
+            )
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                new_err = requests.exceptions.HTTPError(
+                    f"{http_err}\nResponse text: {http_err.response.text}",
+                    response=http_err.response,
+                )
+                raise new_err from http_err
+        except requests.exceptions.RequestException as req_err:
             raise req_err

@@ -44,6 +44,47 @@ def run_trigger_workflow_example(client: SirenClient):
         )
 
 
+def run_trigger_bulk_workflow_example(client: SirenClient):
+    """Demonstrates triggering workflows in bulk using the Siren SDK."""
+    print("\n--- Running Bulk Trigger Workflow Example ---")
+
+    # Example 1: Bulk trigger with common data and multiple notify objects
+    print(
+        "\nAttempting to trigger a bulk workflow with common data and multiple notifications..."
+    )
+    bulk_workflow_name_1 = "sampleWorkflow"
+    common_data_payload = {"campaign_id": "summer_promo_2024"}
+    notify_list_1 = [
+        {
+            "notificationType": "email",
+            "recipient": "user1@example.com",
+            "name": "User One",
+            "discount_code": "SUMMER10",
+        },
+        {
+            "notificationType": "sms",
+            "recipient": "+15551234567",
+            "product_name": "New Gadget",
+            "tracking_link": "http://example.com/track/xyz123",
+        },
+    ]
+
+    try:
+        response_1 = client.trigger_bulk_workflow(
+            workflow_name=bulk_workflow_name_1,
+            notify=notify_list_1,
+            data=common_data_payload,
+        )
+        print(
+            f"Bulk Trigger Workflow Response (with data for '{bulk_workflow_name_1}'):"
+        )
+        print(response_1)
+    except Exception as e:
+        print(
+            f"An error occurred while triggering bulk workflow '{bulk_workflow_name_1}': {e}"
+        )
+
+
 if __name__ == "__main__":
     api_key = os.environ.get("SIREN_API_KEY")
     if not api_key:
@@ -52,4 +93,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     siren_client = SirenClient(api_key=api_key)
-    run_trigger_workflow_example(siren_client)
+    # run_trigger_workflow_example(siren_client)
+    run_trigger_bulk_workflow_example(siren_client)

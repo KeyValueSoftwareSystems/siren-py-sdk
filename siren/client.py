@@ -1,6 +1,6 @@
 """Siren API client implementation."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .templates import TemplatesManager
 from .workflows import WorkflowsManager
@@ -169,4 +169,25 @@ class SirenClient:
         """
         return self._workflows.trigger_workflow(
             workflow_name=workflow_name, data=data, notify=notify
+        )
+
+    def trigger_bulk_workflow(
+        self,
+        workflow_name: str,
+        notify: List[Dict[str, Any]],
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Triggers a workflow in bulk for multiple recipients/notifications.
+
+        Args:
+            workflow_name: The name of the workflow to execute.
+            notify: A list of notification objects, each representing specific data
+                    for a workflow execution.
+            data: Common data that will be used across all workflow executions.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._workflows.trigger_bulk_workflow(
+            workflow_name=workflow_name, notify=notify, data=data
         )
