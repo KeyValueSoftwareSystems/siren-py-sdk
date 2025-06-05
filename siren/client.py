@@ -3,13 +3,14 @@
 from typing import Any, Dict, Optional
 
 from .templates import TemplatesManager
+from .workflows import WorkflowsManager
 
 
 class SirenClient:
     """Client for interacting with the Siren API."""
 
     # TODO: Implement logic to select API URL based on API key type (dev/prod) or environment variable
-    BASE_API_URL = "https://api.dev.trysiren.io/api/v1/public"
+    BASE_API_URL = "https://api.dev.trysiren.io"  # General base URL
 
     def __init__(self, api_key: str):
         """Initialize the SirenClient.
@@ -20,6 +21,10 @@ class SirenClient:
         self.api_key = api_key
         self._templates = TemplatesManager(
             api_key=self.api_key, base_url=self.BASE_API_URL
+        )
+        self._workflows = WorkflowsManager(
+            api_key=self.api_key,
+            base_url=self.BASE_API_URL,  # Note: WorkflowsManager uses /api/v2 internally
         )
 
     def get_templates(
@@ -144,4 +149,24 @@ class SirenClient:
             sort=sort,
             page=page,
             size=size,
+        )
+
+    def trigger_workflow(
+        self,
+        workflow_name: str,
+        data: Optional[Dict[str, Any]] = None,
+        notify: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Triggers a workflow with the given name and payload.
+
+        Args:
+            workflow_name: The name of the workflow to execute.
+            data: Common data for all workflow executions.
+            notify: Specific data for this workflow execution.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._workflows.trigger_workflow(
+            workflow_name=workflow_name, data=data, notify=notify
         )

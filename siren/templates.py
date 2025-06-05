@@ -13,10 +13,10 @@ class TemplatesManager:
 
         Args:
             api_key: The API key for authentication.
-            base_url: The base URL for the Siren API.
+            base_url: The general base URL for the Siren API (e.g., 'https://api.trysiren.io').
         """
         self.api_key = api_key
-        self.base_url = base_url
+        self.base_url = f"{base_url}/api/v1/public"
 
     def get_templates(
         self,

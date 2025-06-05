@@ -4,17 +4,25 @@ This is the official Python SDK for the Siren notification platform.
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Basic Usage](#basic-usage)
-- [Features](#features)
-  - [`get_templates()`](#get_templates)
-  - [`create_template()`](#create_template)
-  - [`update_template()`](#update_template)
-  - [`delete_template()`](#delete_template)
-  - [`publish_template()`](#publish_template)
-  - [`create_channel_configurations()`](#create_channel_configurations)
-  - [`get_channel_templates()`](#get_channel_templates)
-- [Getting Started for Package Developers](#getting-started-for-package-developers)
+- [Siren AI Python SDK (`siren-ai`)](#siren-ai-python-sdk-siren-ai)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Basic Usage](#basic-usage)
+  - [Features](#features)
+    - [`get_templates()`](#get_templates)
+    - [`create_template()`](#create_template)
+    - [`update_template()`](#update_template)
+    - [`delete_template()`](#delete_template)
+    - [`publish_template()`](#publish_template)
+    - [`create_channel_configurations()`](#create_channel_configurations)
+    - [`get_channel_templates()`](#get_channel_templates)
+    - [`trigger_workflow()`](#trigger_workflow)
+  - [Getting Started for Package Developers](#getting-started-for-package-developers)
+    - [Prerequisites](#prerequisites)
+    - [Setup Steps](#setup-steps)
+    - [Code Style \& Linting](#code-style--linting)
+    - [Submitting Changes](#submitting-changes)
+  - [Future Enhancements](#future-enhancements)
 
 ## Installation
 
@@ -187,6 +195,40 @@ sms_channel_templates = client.get_channel_templates(
     size=5
 )
 print(sms_channel_templates)
+```
+
+### `trigger_workflow()`
+
+Triggers a specified workflow with the given data and notification payloads.
+
+**Parameters:**
+*   `workflow_name` (str): The name of the workflow to be executed.
+*   `data` (Optional[Dict[str, Any]]): Common data that will be used across all workflow executions. Defaults to `None`.
+*   `notify` (Optional[Dict[str, Any]]): Specific data for this particular workflow execution. Defaults to `None`.
+
+**Example:**
+```python
+workflow_to_trigger = "otp_workflow"
+data_payload = {
+  "subject": "Your One-Time Password",
+  "user_id": "user_12345"
+}
+notify_payload = {
+  "notificationType": "email",
+  "recipient": "customer@example.com",
+  "name": "John Doe"
+}
+
+trigger_response = client.trigger_workflow(
+    workflow_name=workflow_to_trigger,
+    data=data_payload,
+    notify=notify_payload
+)
+print(trigger_response)
+
+# Example: Triggering a workflow with only the name
+minimal_trigger_response = client.trigger_workflow(workflow_name="simple_workflow")
+print(minimal_trigger_response)
 ```
 
 ## Getting Started for Package Developers
