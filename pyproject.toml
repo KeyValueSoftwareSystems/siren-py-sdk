@@ -11,7 +11,7 @@ authors = [
 description = "Python SDK for the Siren Notification Platform."
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT License" } # TODO: Confirm license and consider adding a LICENSE file
+license = { file = "LICENSE" }
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -35,10 +35,10 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/your-username/siren-ai"  # TODO: Update URL
-"Documentation" = "https://github.com/your-username/siren-ai#readme" # TODO: Update URL (or point to actual docs)
-"Repository" = "https://github.com/your-username/siren-ai" # TODO: Update URL
-"Bug Tracker" = "https://github.com/your-username/siren-ai/issues" # TODO: Update URL
+"Homepage" = "https://github.com/jithu-keyvalue/siren-ai"
+"Documentation" = "https://github.com/jithu-keyvalue/siren-ai#readme"
+"Repository" = "https://github.com/jithu-keyvalue/siren-ai"
+"Bug Tracker" = "https://github.com/jithu-keyvalue/siren-ai/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -50,9 +50,8 @@ dev = [
     "pre-commit",      # For managing pre-commit hooks
     "uv",              # Explicitly list if desired, often installed globally
     "python-dotenv",   # For loading .env files
-    # Consider adding 'build' and 'twine' for release management
-    # "build",
-    # "twine",
+    "build>=0.10.0",
+    "twine>=3.8.0",
 ]
 
 # Specifies that the 'siren' package is in the project root.
