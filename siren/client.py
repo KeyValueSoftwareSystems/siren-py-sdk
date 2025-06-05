@@ -87,3 +87,14 @@ class SirenClient:
             A dictionary containing the API response.
         """
         return self._templates.delete_template(template_id=template_id)
+
+    def publish_template(self, template_id: str) -> Dict[str, Any]:
+        """Publish an existing template.
+
+        Args:
+            template_id: The ID of the template to publish.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._templates.publish_template(template_id=template_id)

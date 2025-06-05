@@ -11,6 +11,7 @@ This is the official Python SDK for the Siren notification platform.
   - [`create_template()`](#create_template)
   - [`update_template()`](#update_template)
   - [`delete_template()`](#delete_template)
+  - [`publish_template()`](#publish_template)
 - [Getting Started for Package Developers](#getting-started-for-package-developers)
 
 ## Installation
@@ -83,7 +84,6 @@ Updates an existing notification template.
 
 **Example:**
 ```python
-# Assume 'existing_template_id' is the ID of a template you want to update
 existing_template_id = "YOUR_EXISTING_TEMPLATE_ID"
 update_payload = {
   "name": "Updated SDK Template Name",
@@ -91,11 +91,8 @@ update_payload = {
   "tagNames": ["sdk-updated"]
 }
 
-if existing_template_id != "YOUR_EXISTING_TEMPLATE_ID": # Basic check before running
-    updated_template_response = client.update_template(existing_template_id, update_payload)
-    print(updated_template_response)
-else:
-    print(f"Please replace 'YOUR_EXISTING_TEMPLATE_ID' with an actual ID to run the update_template example.")
+updated_template_response = client.update_template(existing_template_id, update_payload)
+print(updated_template_response)
 
 ```
 
@@ -108,16 +105,26 @@ Deletes an existing notification template.
 
 **Example:**
 ```python
-# Assume 'template_id_to_delete' is the ID of a template you want to permanently delete
 template_id_to_delete = "YOUR_TEMPLATE_ID_TO_DELETE"
 
-if template_id_to_delete != "YOUR_TEMPLATE_ID_TO_DELETE": # Basic check before running
-    # Consider adding a confirmation step in real applications before deleting
-    delete_response = client.delete_template(template_id_to_delete)
-    print(delete_response)
-else:
-    print(f"Please replace 'YOUR_TEMPLATE_ID_TO_DELETE' with an actual ID to run the delete_template example.")
+delete_response = client.delete_template(template_id_to_delete)
+print(delete_response)
 
+```
+
+### `publish_template()`
+
+Publishes an existing notification template, making its latest draft version live.
+
+**Parameters:**
+*   `template_id` (str): The ID of the template to publish.
+
+**Example:**
+```python
+template_id_to_publish = "YOUR_TEMPLATE_ID_TO_PUBLISH"
+
+publish_response = client.publish_template(template_id_to_publish)
+print(publish_response)
 ```
 
 ## Getting Started for Package Developers
@@ -186,3 +193,7 @@ This guide will help you set up your environment to contribute to the `siren-ai`
 *   Create a feature branch for your changes.
 *   Commit your changes (pre-commit hooks will run).
 *   Push your branch and open a Pull Request against the main repository branch.
+
+## Future Enhancements
+
+*   **Response Models:** Introduce Pydantic models for API responses to provide a more object-oriented interface and stronger type guarantees.

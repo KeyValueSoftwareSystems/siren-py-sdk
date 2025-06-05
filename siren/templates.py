@@ -164,3 +164,29 @@ class TemplatesManager:
                 raise http_err
         except requests.exceptions.RequestException as req_err:
             raise req_err
+
+    def publish_template(self, template_id: str) -> Dict[str, Any]:
+        """Publish an existing template.
+
+        Args:
+            template_id: The ID of the template to publish.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template/{template_id}/publish"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.patch(endpoint, headers=headers, timeout=10)
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX status codes
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err

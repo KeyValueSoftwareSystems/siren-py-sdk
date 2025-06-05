@@ -295,3 +295,102 @@ def test_delete_template_network_error(client, requests_mock):
 
     with pytest.raises(requests.exceptions.ConnectTimeout):
         client.delete_template(template_id)
+
+
+def test_publish_template_success(client, requests_mock):
+    """Test successful publishing of a template."""
+    template_id = "tpl_pub_success"
+    mock_response_data = {
+        "data": {
+            "id": template_id,
+            "name": "Published Template",
+            "publishedVersion": {"status": "PUBLISHED_LATEST"},
+        },
+        "error": None,
+    }
+    requests_mock.patch(
+        f"{client._templates.base_url}/template/{template_id}/publish",
+        json=mock_response_data,
+        status_code=200,
+    )
+
+    response = client.publish_template(template_id)
+    assert response == mock_response_data
+    assert requests_mock.last_request.method == "PATCH"
+
+
+def test_publish_template_not_found_error(client, requests_mock):
+    """Test handling of a 404 Not Found error when publishing a template."""
+    template_id = "tpl_pub_notfound"
+    error_response_data = {
+        "data": None,
+        "error": {"errorCode": "NOT_FOUND", "message": "Template not found"},
+        "errors": [{"errorCode": "NOT_FOUND", "message": "Template not found"}],
+        "meta": None,
+    }
+    requests_mock.patch(
+        f"{client._templates.base_url}/template/{template_id}/publish",
+        json=error_response_data,
+        status_code=404,
+    )
+
+    response = client.publish_template(template_id)
+    assert response == error_response_data
+
+
+def test_publish_template_unauthorized_error(client, requests_mock):
+    """Test handling of a 401 Unauthorized error when publishing a template."""
+    template_id = "tpl_pub_unauth"
+    error_response_data = {
+        "data": None,
+        "error": {"errorCode": "UNAUTHORISED", "message": "Invalid API Key"},
+        "errors": [{"errorCode": "UNAUTHORISED", "message": "Invalid API Key"}],
+        "meta": None,
+    }
+    requests_mock.patch(
+        f"{client._templates.base_url}/template/{template_id}/publish",
+        json=error_response_data,
+        status_code=401,
+    )
+
+    response = client.publish_template(template_id)
+    assert response == error_response_data
+
+
+def test_publish_template_bad_request_error(client, requests_mock):
+    """Test handling of a 400 Bad Request error when publishing a template."""
+    template_id = "tpl_pub_badreq"
+    error_response_data = {
+        "data": None,
+        "error": {
+            "errorCode": "BAD_REQUEST",
+            "message": "Template has no versions to publish",
+        },
+        "errors": [
+            {
+                "errorCode": "BAD_REQUEST",
+                "message": "Template has no versions to publish",
+            }
+        ],
+        "meta": None,
+    }
+    requests_mock.patch(
+        f"{client._templates.base_url}/template/{template_id}/publish",
+        json=error_response_data,
+        status_code=400,
+    )
+
+    response = client.publish_template(template_id)
+    assert response == error_response_data
+
+
+def test_publish_template_network_error(client, requests_mock):
+    """Test handling of a network error when publishing a template."""
+    template_id = "tpl_pub_network_err"
+    requests_mock.patch(
+        f"{client._templates.base_url}/template/{template_id}/publish",
+        exc=requests.exceptions.ConnectTimeout,
+    )
+
+    with pytest.raises(requests.exceptions.ConnectTimeout):
+        client.publish_template(template_id)
