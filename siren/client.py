@@ -98,3 +98,19 @@ class SirenClient:
             A dictionary containing the API response.
         """
         return self._templates.publish_template(template_id=template_id)
+
+    def create_channel_configurations(
+        self, template_id: str, configurations: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create or update channel configurations for a template.
+
+        Args:
+            template_id: The ID of the template.
+            configurations: A dictionary containing the channel configurations.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._templates.create_channel_configurations(
+            template_id=template_id, configurations=configurations
+        )

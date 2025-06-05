@@ -12,6 +12,7 @@ This is the official Python SDK for the Siren notification platform.
   - [`update_template()`](#update_template)
   - [`delete_template()`](#delete_template)
   - [`publish_template()`](#publish_template)
+  - [`create_channel_configurations()`](#create_channel_configurations)
 - [Getting Started for Package Developers](#getting-started-for-package-developers)
 
 ## Installation
@@ -125,6 +126,34 @@ template_id_to_publish = "YOUR_TEMPLATE_ID_TO_PUBLISH"
 
 publish_response = client.publish_template(template_id_to_publish)
 print(publish_response)
+```
+
+### `create_channel_configurations()`
+
+Creates or updates the channel-specific configurations (e.g., for EMAIL, SMS) for a given template.
+
+**Parameters:**
+*   `template_id` (str): The ID of the template for which to create/update channel configurations.
+*   `configurations` (Dict[str, Any]): A dictionary where keys are channel types (e.g., "EMAIL", "SMS") and values are the respective configuration objects. For the detailed payload structure for each channel, please refer to the official Siren API documentation.
+
+**Example:**
+```python
+template_id = "YOUR_TEMPLATE_ID"
+channel_configs_payload = {
+    "SMS": {
+        "body": "New SMS content via SDK for {{variable_name}}",
+        "channel": "SMS", # Ensure channel is specified within its config
+        "isFlash": False
+    },
+    "EMAIL": {
+        "subject": "Channel Config Update for {{variable_name}}",
+        "body": "<p>Updated email body for channel config.</p>",
+        "channel": "EMAIL" # Ensure channel is specified
+    }
+}
+
+response = client.create_channel_configurations(template_id, channel_configs_payload)
+print(response)
 ```
 
 ## Getting Started for Package Developers

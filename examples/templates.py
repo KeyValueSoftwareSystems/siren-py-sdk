@@ -110,6 +110,44 @@ def run_publish_template_example(client: SirenClient):
         print(f"Error publishing template '{template_id_to_publish}': {e}")
 
 
+def run_create_channel_configurations_example(client: SirenClient):
+    """Runs the example for creating channel configurations for a template."""
+    print("\n--- Creating Channel Configurations for Template ---")
+    template_id_for_channel_config = (
+        "11921404-4517-48b7-82ee-fcdcf8f9c03b"  # Replace with an actual template ID
+    )
+    channel_configurations_payload = {
+        "SMS": {
+            "body": "Hello from Siren SDK! This is an SMS channel config.",
+            "channel": "SMS",
+            "isFlash": False,
+            "isUnicode": False,
+        },
+        "EMAIL": {
+            "subject": "Siren SDK Test - Email Channel Config",
+            "channel": "EMAIL",
+            "body": "<p>Hello from Siren SDK! This is an email channel configuration.</p>",
+            "attachments": [],
+            "isRawHTML": True,
+            "isPlainText": False,
+        },
+    }
+
+    try:
+        response = client.create_channel_configurations(
+            template_id_for_channel_config, channel_configurations_payload
+        )
+        if response and response.get("error") is None:
+            print(
+                f"Successfully created/updated channel configurations for template '{template_id_for_channel_config}':"
+            )
+        print(json.dumps(response, indent=2))
+    except Exception as e:
+        print(
+            f"Error creating/updating channel configurations for template '{template_id_for_channel_config}': {e}"
+        )
+
+
 if __name__ == "__main__":
     load_dotenv()
 
@@ -128,3 +166,4 @@ if __name__ == "__main__":
     # run_update_template_example(siren_client)
     # run_delete_template_example(siren_client)
     # run_publish_template_example(siren_client)
+    # run_create_channel_configurations_example(siren_client)

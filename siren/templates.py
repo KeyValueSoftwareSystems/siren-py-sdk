@@ -190,3 +190,41 @@ class TemplatesManager:
                 raise http_err
         except requests.exceptions.RequestException as req_err:
             raise req_err
+
+    def create_channel_configurations(
+        self, template_id: str, configurations: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create or update channel configurations for a template.
+
+        Args:
+            template_id: The ID of the template.
+            configurations: A dictionary containing the channel configurations.
+
+        Example:
+                            {
+                                "SMS": {"body": "...", "channel": "SMS", ...},
+                                "EMAIL": {"subject": "...", "body": "...", ...}
+                            }
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.base_url}/template/{template_id}/channel-templates"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = requests.post(
+                endpoint, headers=headers, json=configurations, timeout=10
+            )
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX status codes
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err

@@ -394,3 +394,153 @@ def test_publish_template_network_error(client, requests_mock):
 
     with pytest.raises(requests.exceptions.ConnectTimeout):
         client.publish_template(template_id)
+
+
+def test_create_channel_configurations_success(client, requests_mock):
+    """Test successful creation of channel configurations."""
+    template_id = "tpl_test123"
+    mock_request_payload = {
+        "SMS": {
+            "body": "Test SMS body for channel config",
+            "channel": "SMS",
+            "isFlash": False,
+            "isUnicode": False,
+        },
+        "EMAIL": {
+            "subject": "Test Email Subject for channel config",
+            "channel": "EMAIL",
+            "body": "<p>Test Email Body for channel config</p>",
+            "attachments": [],
+            "isRawHTML": True,
+            "isPlainText": False,
+        },
+    }
+    mock_response_data = {
+        "data": mock_request_payload,  # Assuming API returns the created configs in 'data'
+        "error": None,
+        "errors": None,
+        "meta": None,
+    }
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        json=mock_response_data,
+        status_code=200,
+    )
+
+    response = client.create_channel_configurations(template_id, mock_request_payload)
+    assert response == mock_response_data
+    assert requests_mock.last_request.json() == mock_request_payload
+    assert requests_mock.last_request.method == "POST"
+
+
+def test_create_channel_configurations_bad_request(client, requests_mock):
+    """Test handling of a 400 Bad Request error for channel configurations."""
+    template_id = "tpl_badreq400"
+    mock_request_payload = {"INVALID_CHANNEL": {"body": "invalid"}}
+    error_response_data = {
+        "data": None,
+        "error": {
+            "errorCode": "BAD_REQUEST",
+            "message": "Invalid channel configuration provided.",
+        },
+        "errors": [
+            {
+                "errorCode": "BAD_REQUEST",
+                "message": "Channel type INVALID_CHANNEL not supported.",
+            }
+        ],
+        "meta": None,
+    }
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        json=error_response_data,
+        status_code=400,
+    )
+
+    response = client.create_channel_configurations(template_id, mock_request_payload)
+    assert response == error_response_data
+
+
+def test_create_channel_configurations_unauthorized(client, requests_mock):
+    """Test handling of a 401 Unauthorized error for channel configurations."""
+    template_id = "tpl_unauth401"
+    mock_request_payload = {"SMS": {"body": "test"}}
+    error_response_data = {
+        "data": None,
+        "error": {"errorCode": "UNAUTHORISED", "message": "Authentication required."},
+        "errors": [
+            {
+                "errorCode": "UNAUTHORISED",
+                "message": "Valid API key is missing or invalid.",
+            }
+        ],
+        "meta": None,
+    }
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        json=error_response_data,
+        status_code=401,
+    )
+
+    response = client.create_channel_configurations(template_id, mock_request_payload)
+    assert response == error_response_data
+
+
+def test_create_channel_configurations_not_found(client, requests_mock):
+    """Test handling of a 404 Not Found error (template_id) for channel configurations."""
+    template_id = "tpl_notfound404"
+    mock_request_payload = {"SMS": {"body": "test"}}
+    error_response_data = {
+        "data": None,
+        "error": {
+            "errorCode": "NOT_FOUND",
+            "message": f"Template with id {template_id} not found.",
+        },
+        "errors": [
+            {
+                "errorCode": "NOT_FOUND",
+                "message": "The requested template does not exist.",
+            }
+        ],
+        "meta": None,
+    }
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        json=error_response_data,
+        status_code=404,
+    )
+
+    response = client.create_channel_configurations(template_id, mock_request_payload)
+    assert response == error_response_data
+
+
+def test_create_channel_configurations_network_error(client, requests_mock):
+    """Test handling of a network error for channel configurations."""
+    template_id = "tpl_network_error"
+    mock_request_payload = {"SMS": {"body": "test"}}
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        exc=requests.exceptions.ConnectTimeout,
+    )
+
+    with pytest.raises(requests.exceptions.ConnectTimeout):
+        client.create_channel_configurations(template_id, mock_request_payload)
+
+
+def test_create_channel_configurations_http_error_non_json_response(
+    client, requests_mock
+):
+    """Test HTTP error with non-JSON response for channel configurations."""
+    template_id = "tpl_http_non_json"
+    mock_request_payload = {"SMS": {"body": "test"}}
+    requests_mock.post(
+        f"{client._templates.base_url}/template/{template_id}/channel-templates",
+        text="Internal Server Error - Not JSON",  # Non-JSON response
+        status_code=500,
+    )
+
+    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        client.create_channel_configurations(template_id, mock_request_payload)
+
+    assert excinfo.value.response.status_code == 500
+    assert "Internal Server Error - Not JSON" in excinfo.value.response.text
