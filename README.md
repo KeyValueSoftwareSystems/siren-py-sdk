@@ -16,6 +16,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`publish_template()`](#publish_template)
     - [`create_channel_templates()`](#create_channel_templates)
     - [`get_channel_templates()`](#get_channel_templates)
+    - [`send_message()`](#send_message)
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
@@ -197,6 +198,46 @@ sms_channel_templates = client.get_channel_templates(
     size=5
 )
 print(sms_channel_templates)
+```
+
+### `send_message()`
+
+Sends a message using a specified template to a recipient via a chosen channel.
+
+**Parameters:**
+*   `template_name` (str): The name of the template to use.
+*   `channel` (str): The channel through which to send the message (e.g., "EMAIL", "SLACK", "SMS").
+*   `recipient_type` (str): The type of recipient identifier (e.g., "direct", "user_id").
+*   `recipient_value` (str): The actual value of the recipient identifier (e.g., "recipient@example.com", "U123XYZ", "+15551234567").
+*   `template_variables` (Optional[Dict[str, Any]]): A dictionary of variables to be interpolated into the template. Defaults to `None`.
+
+**Example:**
+```python
+# IMPORTANT: Replace with your actual template name, channel, and recipient details.
+template_name = "your_template_name_here"
+channel = "EMAIL"
+recipient_type = "direct"
+recipient_value = "recipient@example.com"
+
+# Optional: Provide template variables if your template requires them
+template_variables = {
+    "user_name": "Alex Doe",
+    "order_id": "ORD98765"
+}
+
+response = client.send_message(
+    template_name=template_name,
+    channel=channel,
+    recipient_type=recipient_type,
+    recipient_value=recipient_value,
+    template_variables=template_variables # Pass None or omit if no variables
+)
+print(response)
+
+if response and response.get("data") and response.get("data", {}).get("notificationId"):
+    print(f"Message sent successfully! Notification ID: {response['data']['notificationId']}")
+else:
+    print(f"Failed to send message. Error: {response.get('error', 'Unknown error')}")
 ```
 
 ### `trigger_workflow()`

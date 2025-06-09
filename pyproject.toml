@@ -44,6 +44,7 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov",      # For test coverage reports
+    "pytest-mock",     # For mocking objects in tests
     "requests-mock",   # For mocking HTTP requests in tests
     "ruff",            # Linter, formatter, import sorter
     "pyright",         # Static type checker

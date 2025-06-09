@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
+from .messaging import MessagingManager
 from .templates import TemplatesManager
 from .workflows import WorkflowsManager
 
@@ -25,6 +26,9 @@ class SirenClient:
         self._workflows = WorkflowsManager(
             api_key=self.api_key,
             base_url=self.BASE_API_URL,  # Note: WorkflowsManager uses /api/v2 internally
+        )
+        self._messaging = MessagingManager(
+            api_key=self.api_key, base_url=self.BASE_API_URL
         )
 
     def get_templates(
@@ -193,4 +197,32 @@ class SirenClient:
         """
         return self._workflows.trigger_bulk_workflow(
             workflow_name=workflow_name, notify=notify, data=data
+        )
+
+    def send_message(
+        self,
+        template_name: str,
+        channel: str,
+        recipient_type: str,
+        recipient_value: str,
+        template_variables: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Send a message using a specific template.
+
+        Args:
+            template_name: The name of the template to use.
+            channel: The channel to send the message through (e.g., "SLACK", "EMAIL").
+            recipient_type: The type of recipient (e.g., "direct").
+            recipient_value: The identifier for the recipient (e.g., Slack user ID, email address).
+            template_variables: A dictionary of variables to populate the template.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._messaging.send_message(
+            template_name=template_name,
+            channel=channel,
+            recipient_type=recipient_type,
+            recipient_value=recipient_value,
+            template_variables=template_variables,
         )
