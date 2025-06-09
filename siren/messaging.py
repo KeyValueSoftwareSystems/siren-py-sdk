@@ -70,3 +70,32 @@ class MessagingManager:
         except requests.exceptions.RequestException as req_err:
             # For other network errors (timeout, connection error, etc.)
             raise req_err
+
+    def get_replies(self, message_id: str) -> Dict[str, Any]:
+        """
+        Retrieve replies for a specific message.
+
+        Args:
+            message_id: The ID of the message for which to retrieve replies.
+
+        Returns:
+            A dictionary containing the API response with replies.
+        """
+        endpoint = f"{self.base_url}/get-reply/{message_id}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "application/json",
+        }
+        try:
+            response = requests.get(endpoint, headers=headers, timeout=10)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            # Try to return JSON error response if available, otherwise re-raise
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                raise http_err
+        except requests.exceptions.RequestException as req_err:
+            # For network errors or other request issues
+            raise req_err

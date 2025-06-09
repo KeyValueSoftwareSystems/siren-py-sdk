@@ -226,3 +226,17 @@ class SirenClient:
             recipient_value=recipient_value,
             template_variables=template_variables,
         )
+
+    def get_replies(self, message_id: str) -> Dict[str, Any]:
+        """
+        Retrieve replies for a specific message ID.
+
+        Delegates to MessagingManager.get_replies.
+
+        Args:
+            message_id: The ID of the message for which to retrieve replies.
+
+        Returns:
+            A dictionary containing the API response with replies.
+        """
+        return self._messaging.get_replies(message_id=message_id)

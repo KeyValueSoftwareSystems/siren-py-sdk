@@ -32,7 +32,7 @@ class TestMessagingManager:
         mock_response_data = {"data": {"notificationId": "notif_123"}, "error": None}
 
         requests_mock.post(
-            f"{BASE_URL}/send-messages",
+            f"{BASE_URL}/api/v1/public/send-messages",
             json=mock_response_data,
             status_code=200,
         )
@@ -70,7 +70,7 @@ class TestMessagingManager:
         mock_response_data = {"data": {"notificationId": "notif_456"}, "error": None}
 
         requests_mock.post(
-            f"{BASE_URL}/send-messages",
+            f"{BASE_URL}/api/v1/public/send-messages",
             json=mock_response_data,
             status_code=200,
         )
@@ -95,7 +95,7 @@ class TestMessagingManager:
         manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
         error_response = {"error": "Bad Request", "message": "Invalid template name"}
         requests_mock.post(
-            f"{BASE_URL}/send-messages",
+            f"{BASE_URL}/api/v1/public/send-messages",
             json=error_response,
             status_code=400,
         )
@@ -114,7 +114,7 @@ class TestMessagingManager:
         """Test HTTP error without JSON response during message sending."""
         manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
         requests_mock.post(
-            f"{BASE_URL}/send-messages",
+            f"{BASE_URL}/api/v1/public/send-messages",
             text="Internal Server Error",
             status_code=500,
         )
@@ -133,7 +133,7 @@ class TestMessagingManager:
         """Test requests.exceptions.RequestException during message sending."""
         manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
         requests_mock.post(
-            f"{BASE_URL}/send-messages",
+            f"{BASE_URL}/api/v1/public/send-messages",
             exc=requests.exceptions.ConnectTimeout,
         )
 
@@ -144,6 +144,80 @@ class TestMessagingManager:
                 recipient_type="direct",
                 recipient_value="U123",
             )
+
+    def test_get_replies_success(self, requests_mock: RequestsMocker):
+        """Test successful retrieval of message replies."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_123"
+        expected_replies = [
+            {"text": "Reply 1", "user": "U123", "ts": "12345.6789"},
+            {"text": "Reply 2", "user": "U456", "ts": "12346.7890"},
+        ]
+        mock_response_data = {"data": expected_replies, "error": None}
+
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
+            json=mock_response_data,
+            status_code=200,
+        )
+        response = manager.get_replies(message_id=message_id)
+        assert response == mock_response_data
+        assert response["data"] == expected_replies
+
+    def test_get_replies_no_replies(self, requests_mock: RequestsMocker):
+        """Test retrieval when a message has no replies."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_no_replies"
+        mock_response_data = {"data": [], "error": None}
+
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
+            json=mock_response_data,
+            status_code=200,
+        )
+        response = manager.get_replies(message_id=message_id)
+        assert response == mock_response_data
+        assert response["data"] == []
+
+    def test_get_replies_http_error_json_response(self, requests_mock: RequestsMocker):
+        """Test HTTP error with JSON response during get_replies."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_error_json"
+        error_response = {"error": "Not Found", "message": "Message ID does not exist."}
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
+            json=error_response,
+            status_code=404,
+        )
+        response = manager.get_replies(message_id=message_id)
+        assert response == error_response
+
+    def test_get_replies_http_error_no_json_response(
+        self, requests_mock: RequestsMocker
+    ):
+        """Test HTTP error without JSON response during get_replies."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_error_no_json"
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
+            text="Internal Server Error",
+            status_code=500,
+        )
+        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+            manager.get_replies(message_id=message_id)
+        assert excinfo.value.response.status_code == 500
+        assert excinfo.value.response.text == "Internal Server Error"
+
+    def test_get_replies_request_exception(self, requests_mock: RequestsMocker):
+        """Test requests.exceptions.RequestException during get_replies."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_req_exception"
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
+            exc=requests.exceptions.Timeout("Connection timed out"),
+        )
+        with pytest.raises(requests.exceptions.RequestException):
+            manager.get_replies(message_id=message_id)
 
 
 def test_siren_client_send_message(mocker):
@@ -175,3 +249,19 @@ def test_siren_client_send_message(mocker):
         recipient_value=recipient_value,
         template_variables=template_variables,
     )
+
+
+def test_siren_client_get_replies(mocker):
+    """Test SirenClient.get_replies calls MessagingManager correctly."""
+    client = SirenClient(api_key=API_KEY)
+    mock_messaging_manager_get_replies = mocker.patch.object(
+        client._messaging, "get_replies"
+    )
+    mock_response = {"data": [{"text": "A reply"}]}
+    mock_messaging_manager_get_replies.return_value = mock_response
+    message_id = "msg_client_test"
+
+    response = client.get_replies(message_id=message_id)
+
+    mock_messaging_manager_get_replies.assert_called_once_with(message_id=message_id)
+    assert response == mock_response

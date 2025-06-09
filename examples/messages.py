@@ -48,13 +48,43 @@ def send_message_example(client: SirenClient):
         elif response and response.get("error"):
             print(f"Failed to send message. Error: {response['error']}")
         else:
-            print(
-                "Failed to send message. Unknown error or unexpected response format."
-            )
+            print("Received an unexpected response structure for send_message.")
 
     except Exception as e:
         print(f"An error occurred while sending the message: {e}")
-    print("-" * 30)
+
+
+def get_replies_example(client: SirenClient, message_id: str):
+    """Demonstrates retrieving replies for a message."""
+    print("\nAttempting to get message replies...")
+    # IMPORTANT: Replace with an actual message ID that has replies
+    message_id_with_replies = "9004b6b0-3e77-4add-9541-56ba28c37f27"
+
+    try:
+        print(f"Fetching replies for message ID: {message_id_with_replies}")
+        response = client.get_replies(message_id=message_id_with_replies)
+        print("Get message replies API response:")
+        print(response)
+
+        if response and response.get("data") is not None:  # Check if 'data' key exists
+            replies = response["data"]
+            if isinstance(replies, list) and replies:
+                print(f"Found {len(replies)} replies:")
+                for i, reply in enumerate(replies):
+                    print(
+                        f"  Reply {i+1}: {reply.get('text', 'N/A')} (User: {reply.get('user', 'N/A')}, Timestamp: {reply.get('ts', 'N/A')})"
+                    )
+            elif isinstance(replies, list) and not replies:
+                print("No replies found for this message.")
+            else:
+                print("Received 'data' but it's not a list of replies as expected.")
+        elif response and response.get("error"):
+            print(f"Failed to get replies. Error: {response['error']}")
+        else:
+            print("Received an unexpected response structure for get_message_replies.")
+
+    except Exception as e:
+        print(f"An error occurred while getting message replies: {e}")
 
 
 if __name__ == "__main__":
@@ -67,3 +97,4 @@ if __name__ == "__main__":
 
     siren_client = SirenClient(api_key=api_key)
     send_message_example(siren_client)
+    get_replies_example(siren_client, "EXAMPLE_MESSAGE_ID")

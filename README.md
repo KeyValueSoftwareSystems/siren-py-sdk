@@ -17,6 +17,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`create_channel_templates()`](#create_channel_templates)
     - [`get_channel_templates()`](#get_channel_templates)
     - [`send_message()`](#send_message)
+    - [`get_replies()`](#get_replies)
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
@@ -238,6 +239,22 @@ if response and response.get("data") and response.get("data", {}).get("notificat
     print(f"Message sent successfully! Notification ID: {response['data']['notificationId']}")
 else:
     print(f"Failed to send message. Error: {response.get('error', 'Unknown error')}")
+```
+
+### `get_replies()`
+
+Retrieves the replies for a specific message ID.
+
+**Parameters:**
+*   `message_id` (str): The ID of the message for which to retrieve replies.
+
+**Example:**
+```python
+# IMPORTANT: Replace with an actual message ID
+message_id_to_check = "YOUR_MESSAGE_ID"
+
+replies_response = client.get_replies(message_id=message_id_to_check)
+print(replies_response)
 ```
 
 ### `trigger_workflow()`
