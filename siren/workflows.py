@@ -15,7 +15,7 @@ class WorkflowsManager:
             base_url: The general base URL for the Siren API (e.g., 'https://api.trysiren.io').
             api_key: The API key for authentication.
         """
-        self.base_url = f"{base_url}/api/v2"
+        self.root_base_url = base_url  # Store the root base URL
         self.api_key = api_key
 
     def trigger_workflow(
@@ -35,9 +35,7 @@ class WorkflowsManager:
         Returns:
             A dictionary containing the API response.
         """
-        endpoint = (
-            f"{self.base_url}/workflows/trigger"  # self.base_url now includes /api/v2
-        )
+        endpoint = f"{self.root_base_url}/api/v2/workflows/trigger"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -91,7 +89,7 @@ class WorkflowsManager:
         Returns:
             A dictionary containing the API response.
         """
-        endpoint = f"{self.base_url}/workflows/trigger/bulk"
+        endpoint = f"{self.root_base_url}/api/v2/workflows/trigger/bulk"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -110,6 +108,73 @@ class WorkflowsManager:
                 headers=headers,
                 json=payload,
                 timeout=20,  # Increased timeout for bulk
+            )
+            response.raise_for_status()  # Raises HTTPError for 4XX/5XX
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                return http_err.response.json()
+            except requests.exceptions.JSONDecodeError:
+                new_err = requests.exceptions.HTTPError(
+                    f"{http_err}\nResponse text: {http_err.response.text}",
+                    response=http_err.response,
+                )
+                raise new_err from http_err
+        except requests.exceptions.RequestException as req_err:
+            raise req_err
+
+    def schedule_workflow(
+        self,
+        name: str,
+        schedule_time: str,  # Format: "HH:MM:SS"
+        timezone_id: str,  # E.g., "Asia/Kolkata"
+        start_date: str,  # Format: "YYYY-MM-DD"
+        workflow_type: str,  # E.g., "ONCE", "DAILY", "WEEKLY"
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        end_date: Optional[str] = None,  # Format: "YYYY-MM-DD"
+    ) -> Dict[str, Any]:
+        """
+        Schedules a workflow execution.
+
+        Args:
+            name: Name of the schedule.
+            schedule_time: Time for the schedule in "HH:MM:SS" format.
+            timezone_id: Timezone ID (e.g., "Asia/Kolkata").
+            start_date: Start date for the schedule in "YYYY-MM-DD" format.
+            workflow_type: Type of schedule (e.g., "ONCE", "DAILY").
+            workflow_id: ID of the workflow to schedule.
+            input_data: Input data for the workflow.
+            end_date: Optional end date for the schedule in "YYYY-MM-DD" format.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        endpoint = f"{self.root_base_url}/api/v1/public/schedules"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        payload: Dict[str, Any] = {
+            "name": name,
+            "scheduleTime": schedule_time,
+            "timezoneId": timezone_id,
+            "startDate": start_date,
+            "type": workflow_type,
+            "workflowId": workflow_id,
+            "inputData": input_data,
+        }
+        if end_date is not None:
+            payload["endDate"] = end_date
+        elif (
+            workflow_type == "ONCE"
+        ):  # API expects an empty string if not provided for type ONCE
+            payload["endDate"] = ""
+
+        try:
+            response = requests.post(
+                endpoint, headers=headers, json=payload, timeout=10
             )
             response.raise_for_status()  # Raises HTTPError for 4XX/5XX
             return response.json()

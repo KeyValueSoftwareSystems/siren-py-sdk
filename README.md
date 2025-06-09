@@ -23,6 +23,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`configure_inbound_message_webhook()`](#configure_inbound_message_webhook)
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
+    - [`schedule_workflow()`](#schedule_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
     - [Prerequisites](#prerequisites)
     - [Setup Steps](#setup-steps)
@@ -389,6 +390,49 @@ minimal_bulk_response = client.trigger_bulk_workflow(
     ]
 )
 print(minimal_bulk_response)
+```
+
+### `schedule_workflow()`
+
+Schedules a workflow to run at a future time, either once or on a recurring basis.
+
+**Parameters:**
+*   `name` (str): A descriptive name for the schedule.
+*   `schedule_time` (str): The time of day for the schedule to run (e.g., "09:00:00").
+*   `timezone_id` (str): The IANA timezone ID for the schedule (e.g., "America/New_York").
+*   `start_date` (str): The date when the schedule should start (e.g., "2025-08-01").
+*   `workflow_type` (str): The type of recurrence (e.g., "ONCE", "DAILY", "WEEKLY", "MONTHLY").
+*   `workflow_id` (str): The ID of the workflow to schedule.
+*   `input_data` (Dict[str, Any]): The input data for the workflow.
+*   `end_date` (Optional[str]): The date when the schedule should end (inclusive). Required for recurring schedules other than "ONCE". Defaults to `None`.
+
+**Example:**
+```python
+# Schedule a workflow to run daily
+daily_schedule_response = client.schedule_workflow(
+    name="Daily Report Generation",
+    schedule_time="09:00:00",
+    timezone_id="America/New_York",
+    start_date="2025-08-01",
+    workflow_type="DAILY",
+    workflow_id="YOUR_WORKFLOW_ID",
+    input_data={"report_type": "sales_summary"},
+    end_date="2025-08-31"
+)
+print(daily_schedule_response)
+
+# Schedule a workflow to run once
+once_schedule_response = client.schedule_workflow(
+    name="One-Time Data Processing",
+    schedule_time="15:30:00",
+    timezone_id="America/New_York",
+    start_date="2025-09-15",
+    workflow_type="ONCE",
+    workflow_id="YOUR_OTHER_WORKFLOW_ID",
+    input_data={"task_id": "process_batch_xyz"}
+    # end_date is not provided for "ONCE" type
+)
+print(once_schedule_response)
 ```
 
 ## Getting Started for Package Developers

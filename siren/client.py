@@ -203,6 +203,44 @@ class SirenClient:
             workflow_name=workflow_name, notify=notify, data=data
         )
 
+    def schedule_workflow(
+        self,
+        name: str,
+        schedule_time: str,
+        timezone_id: str,
+        start_date: str,
+        workflow_type: str,
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        end_date: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Schedules a workflow execution.
+
+        Args:
+            name: Name of the schedule.
+            schedule_time: Time for the schedule in "HH:MM:SS" format.
+            timezone_id: Timezone ID (e.g., "Asia/Kolkata").
+            start_date: Start date for the schedule in "YYYY-MM-DD" format.
+            workflow_type: Type of schedule (e.g., "ONCE", "DAILY").
+            workflow_id: ID of the workflow to schedule.
+            input_data: Input data for the workflow.
+            end_date: Optional end date for the schedule in "YYYY-MM-DD" format.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._workflows.schedule_workflow(
+            name=name,
+            schedule_time=schedule_time,
+            timezone_id=timezone_id,
+            start_date=start_date,
+            workflow_type=workflow_type,
+            workflow_id=workflow_id,
+            input_data=input_data,
+            end_date=end_date,
+        )
+
     def send_message(
         self,
         template_name: str,

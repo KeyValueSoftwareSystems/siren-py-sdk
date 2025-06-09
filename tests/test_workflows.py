@@ -318,3 +318,231 @@ def test_trigger_bulk_workflow_http_error_non_json_response(
     assert non_json_error_text in str(excinfo.value)
     assert excinfo.value.response is not None
     assert excinfo.value.response.status_code == 503
+
+
+# --- Tests for schedule_workflow --- #
+
+SCHEDULE_NAME = "Test Schedule"
+SCHEDULE_TIME = "10:00:00"
+TIMEZONE_ID = "America/New_York"
+START_DATE = "2025-12-01"
+END_DATE_SPECIFIED = "2025-12-31"
+WORKFLOW_TYPE_ONCE = "ONCE"
+WORKFLOW_TYPE_DAILY = "DAILY"
+SCHEDULE_WORKFLOW_ID = "wf_schedule_abc123"
+INPUT_DATA = {"param1": "value1", "param2": 123}
+
+MOCK_V1_PUBLIC_BASE = f"{SirenClient.BASE_API_URL}/api/v1/public"
+
+
+def test_schedule_workflow_success_all_params(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow with all parameters successfully."""
+    expected_api_response = {
+        "data": {
+            "id": "sch_12345",
+            "name": SCHEDULE_NAME,
+            "type": WORKFLOW_TYPE_DAILY,
+            "startDate": START_DATE,
+            "endDate": END_DATE_SPECIFIED,
+            "scheduleTime": SCHEDULE_TIME,
+            "timezoneId": TIMEZONE_ID,
+            "workflowId": SCHEDULE_WORKFLOW_ID,
+            "inputData": INPUT_DATA,
+            "status": "ACTIVE",
+        },
+        "error": None,
+        "errors": None,
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(mock_url, json=expected_api_response, status_code=200)
+
+    response = client.schedule_workflow(
+        name=SCHEDULE_NAME,
+        schedule_time=SCHEDULE_TIME,
+        timezone_id=TIMEZONE_ID,
+        start_date=START_DATE,
+        workflow_type=WORKFLOW_TYPE_DAILY,
+        workflow_id=SCHEDULE_WORKFLOW_ID,
+        input_data=INPUT_DATA,
+        end_date=END_DATE_SPECIFIED,
+    )
+
+    assert response == expected_api_response
+    history = requests_mock.request_history
+    assert len(history) == 1
+    assert history[0].method == "POST"
+    assert history[0].url == mock_url
+    assert history[0].json() == {
+        "name": SCHEDULE_NAME,
+        "scheduleTime": SCHEDULE_TIME,
+        "timezoneId": TIMEZONE_ID,
+        "startDate": START_DATE,
+        "type": WORKFLOW_TYPE_DAILY,
+        "workflowId": SCHEDULE_WORKFLOW_ID,
+        "inputData": INPUT_DATA,
+        "endDate": END_DATE_SPECIFIED,
+    }
+    assert history[0].headers["Authorization"] == f"Bearer {API_KEY}"
+
+
+def test_schedule_workflow_success_once_no_end_date(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow for ONCE type with no end_date successfully."""
+    expected_api_response = {
+        "data": {
+            "id": "sch_67890",
+            "name": SCHEDULE_NAME,
+            "type": WORKFLOW_TYPE_ONCE,
+            "startDate": START_DATE,
+            "endDate": START_DATE,  # API might return startDate as endDate for ONCE
+            "scheduleTime": SCHEDULE_TIME,
+            "timezoneId": TIMEZONE_ID,
+            "workflowId": SCHEDULE_WORKFLOW_ID,
+            "inputData": INPUT_DATA,
+            "status": "ACTIVE",
+        },
+        "error": None,
+        "errors": None,
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(mock_url, json=expected_api_response, status_code=200)
+
+    response = client.schedule_workflow(
+        name=SCHEDULE_NAME,
+        schedule_time=SCHEDULE_TIME,
+        timezone_id=TIMEZONE_ID,
+        start_date=START_DATE,
+        workflow_type=WORKFLOW_TYPE_ONCE,
+        workflow_id=SCHEDULE_WORKFLOW_ID,
+        input_data=INPUT_DATA,
+        end_date=None,  # Explicitly None
+    )
+
+    assert response == expected_api_response
+    history = requests_mock.request_history
+    assert len(history) == 1
+    assert history[0].json() == {
+        "name": SCHEDULE_NAME,
+        "scheduleTime": SCHEDULE_TIME,
+        "timezoneId": TIMEZONE_ID,
+        "startDate": START_DATE,
+        "type": WORKFLOW_TYPE_ONCE,
+        "workflowId": SCHEDULE_WORKFLOW_ID,
+        "inputData": INPUT_DATA,
+        "endDate": "",  # Expected to be an empty string for ONCE type
+    }
+
+
+def test_schedule_workflow_http_400_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow handles HTTP 400 Bad Request error."""
+    error_response = {
+        "data": None,
+        "error": {"errorCode": "VALIDATION_ERROR", "message": "Invalid input"},
+        "errors": [{"field": "scheduleTime", "message": "Invalid time format"}],
+        "meta": None,
+    }
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(mock_url, json=error_response, status_code=400)
+
+    response = client.schedule_workflow(
+        name=SCHEDULE_NAME,
+        schedule_time="invalid-time",  # Intentionally invalid
+        timezone_id=TIMEZONE_ID,
+        start_date=START_DATE,
+        workflow_type=WORKFLOW_TYPE_ONCE,
+        workflow_id=SCHEDULE_WORKFLOW_ID,
+        input_data=INPUT_DATA,
+    )
+    assert response == error_response
+
+
+def test_schedule_workflow_http_401_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow handles HTTP 401 Unauthorized error."""
+    error_response = {"detail": "Authentication credentials were not provided."}
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(mock_url, json=error_response, status_code=401)
+
+    response = client.schedule_workflow(
+        name=SCHEDULE_NAME,
+        schedule_time=SCHEDULE_TIME,
+        timezone_id=TIMEZONE_ID,
+        start_date=START_DATE,
+        workflow_type=WORKFLOW_TYPE_ONCE,
+        workflow_id=SCHEDULE_WORKFLOW_ID,
+        input_data=INPUT_DATA,
+    )
+    assert response == error_response
+
+
+def test_schedule_workflow_http_404_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow handles HTTP 404 Not Found error (e.g., bad workflowId)."""
+    error_response = {"detail": "Workflow not found."}
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(mock_url, json=error_response, status_code=404)
+
+    response = client.schedule_workflow(
+        name=SCHEDULE_NAME,
+        schedule_time=SCHEDULE_TIME,
+        timezone_id=TIMEZONE_ID,
+        start_date=START_DATE,
+        workflow_type=WORKFLOW_TYPE_ONCE,
+        workflow_id="wf_non_existent_xyz789",
+        input_data=INPUT_DATA,
+    )
+    assert response == error_response
+
+
+def test_schedule_workflow_network_error(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow handles a network error."""
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    requests_mock.post(
+        mock_url, exc=requests.exceptions.ConnectionError("Connection failed")
+    )
+
+    with pytest.raises(requests.exceptions.RequestException):
+        client.schedule_workflow(
+            name=SCHEDULE_NAME,
+            schedule_time=SCHEDULE_TIME,
+            timezone_id=TIMEZONE_ID,
+            start_date=START_DATE,
+            workflow_type=WORKFLOW_TYPE_ONCE,
+            workflow_id=SCHEDULE_WORKFLOW_ID,
+            input_data=INPUT_DATA,
+        )
+
+
+def test_schedule_workflow_http_error_non_json_response(
+    client: SirenClient, requests_mock: RequestsMocker
+):
+    """Test schedule_workflow handles HTTP error with non-JSON response."""
+    mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
+    non_json_error_text = "Gateway Timeout"
+    requests_mock.post(mock_url, text=non_json_error_text, status_code=504)
+
+    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        client.schedule_workflow(
+            name=SCHEDULE_NAME,
+            schedule_time=SCHEDULE_TIME,
+            timezone_id=TIMEZONE_ID,
+            start_date=START_DATE,
+            workflow_type=WORKFLOW_TYPE_ONCE,
+            workflow_id=SCHEDULE_WORKFLOW_ID,
+            input_data=INPUT_DATA,
+        )
+
+    assert non_json_error_text in str(excinfo.value)
+    assert excinfo.value.response is not None
+    assert excinfo.value.response.status_code == 504

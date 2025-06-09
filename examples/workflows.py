@@ -8,6 +8,9 @@ from siren import SirenClient
 
 # This allows running the script directly from the examples directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import json  # For pretty printing the response
+
+from requests.exceptions import HTTPError, RequestException  # For handling API errors
 
 
 def run_trigger_workflow_example(client: SirenClient):
@@ -85,6 +88,42 @@ def run_trigger_bulk_workflow_example(client: SirenClient):
         )
 
 
+def run_schedule_workflow_example(client: SirenClient):
+    """Demonstrates scheduling workflows using the Siren SDK."""
+    print("\n--- Running Schedule Workflow Example ---")
+    timezone_id = "America/New_York"
+    schedule_name_once = "My One-Time Task via SDK Example"
+    schedule_time_once = "19:04:00"
+    start_date_once = "2025-06-09"
+    workflow_type_once = "ONCE"
+    workflow_id_once = "bcd59a55-1072-41a7-90d9-5554b21aef1b"
+    input_data_once = {"task_name": "sdk_once_example_processing", "details": "Urgent"}
+
+    try:
+        response_once = client.schedule_workflow(
+            name=schedule_name_once,
+            schedule_time=schedule_time_once,
+            timezone_id=timezone_id,  # Can use the same or a different one
+            start_date=start_date_once,
+            workflow_type=workflow_type_once,
+            workflow_id=workflow_id_once,
+            input_data=input_data_once,
+            # end_date is omitted for ONCE type
+        )
+        print("Successfully scheduled ONCE workflow. Response:")
+        print(json.dumps(response_once, indent=2))
+    except HTTPError as e:
+        print(f"HTTP Error scheduling ONCE workflow (Status {e.response.status_code}):")
+        try:
+            print(f"Error details: {json.dumps(e.response.json(), indent=2)}")
+        except json.JSONDecodeError:
+            print(f"Error details (non-JSON): {e.response.text}")
+    except RequestException as e:
+        print(f"Request Error scheduling ONCE workflow: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
 if __name__ == "__main__":
     api_key = os.environ.get("SIREN_API_KEY")
     if not api_key:
@@ -94,4 +133,5 @@ if __name__ == "__main__":
 
     siren_client = SirenClient(api_key=api_key)
     # run_trigger_workflow_example(siren_client)
-    run_trigger_bulk_workflow_example(siren_client)
+    # run_trigger_bulk_workflow_example(siren_client)
+    run_schedule_workflow_example(siren_client)
