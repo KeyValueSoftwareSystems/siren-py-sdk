@@ -104,20 +104,23 @@ class SirenClient:
         """
         return self._templates.publish_template(template_id=template_id)
 
-    def create_channel_configurations(
-        self, template_id: str, configurations: Dict[str, Any]
+    def create_channel_templates(
+        self,
+        template_id: str,
+        channel_templates: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Create or update channel configurations for a template.
+        """Create or update channel templates for a specific template.
 
         Args:
-            template_id: The ID of the template.
-            configurations: A dictionary containing the channel configurations.
+            template_id: The ID of the template for which to create channel templates.
+            channel_templates: A dictionary where keys are channel names (e.g., "EMAIL", "SMS")
+                             and values are the channel-specific template objects.
 
         Returns:
             A dictionary containing the API response.
         """
-        return self._templates.create_channel_configurations(
-            template_id=template_id, configurations=configurations
+        return self._templates.create_channel_templates(
+            template_id=template_id, channel_templates=channel_templates
         )
 
     def get_channel_templates(
@@ -129,10 +132,10 @@ class SirenClient:
         page: Optional[int] = None,
         size: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Fetch channel templates for a specific template version.
+        """Get channel templates for a specific template version.
 
         Args:
-            version_id: The ID of the template version.
+            version_id: The ID of the template version for which to fetch channel templates.
             channel: Filter by channel type (e.g., "EMAIL", "SMS").
             search: Search by field.
             sort: Sort by field.

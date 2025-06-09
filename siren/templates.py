@@ -191,14 +191,17 @@ class TemplatesManager:
         except requests.exceptions.RequestException as req_err:
             raise req_err
 
-    def create_channel_configurations(
-        self, template_id: str, configurations: Dict[str, Any]
+    def create_channel_templates(
+        self,
+        template_id: str,
+        channel_templates: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Create or update channel configurations for a template.
+        """Create or update channel templates for a specific template.
 
         Args:
-            template_id: The ID of the template.
-            configurations: A dictionary containing the channel configurations.
+            template_id: The ID of the template for which to create channel templates.
+            channel_templates: A dictionary where keys are channel names (e.g., "EMAIL", "SMS")
+                             and values are the channel-specific template objects.
 
         Example:
                             {
@@ -217,7 +220,7 @@ class TemplatesManager:
         }
         try:
             response = requests.post(
-                endpoint, headers=headers, json=configurations, timeout=10
+                endpoint, headers=headers, json=channel_templates, timeout=10
             )
             response.raise_for_status()  # Raises HTTPError for 4XX/5XX status codes
             return response.json()
@@ -241,9 +244,9 @@ class TemplatesManager:
         """Fetch channel templates for a specific template version.
 
         Args:
-            version_id: The ID of the template version.
+            version_id: The ID of the template version for which to fetch channel templates.
             channel: Filter by channel type (e.g., "EMAIL", "SMS").
-            search: Search by field.
+            search: Search term to filter channel templates.
             sort: Sort by field.
             page: Page number.
             size: Page size.

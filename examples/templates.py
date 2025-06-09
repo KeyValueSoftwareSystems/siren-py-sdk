@@ -110,21 +110,21 @@ def run_publish_template_example(client: SirenClient):
         print(f"Error publishing template '{template_id_to_publish}': {e}")
 
 
-def run_create_channel_configurations_example(client: SirenClient):
-    """Runs the example for creating channel configurations for a template."""
-    print("\n--- Creating Channel Configurations for Template ---")
-    template_id_for_channel_config = (
-        "11921404-4517-48b7-82ee-fcdcf8f9c03b"  # Replace with an actual template ID
+def run_create_channel_templates_example(client: SirenClient):
+    """Runs the example for creating channel templates for a template."""
+    print("\n--- Creating Channel Templates for a Template ---")
+    template_id_for_channel_templates = (
+        "cacf1503-8283-42a8-b5fd-27d85054fb99"  # Replace with an actual template ID
     )
-    channel_configurations_payload = {
+    channel_templates_payload = {
         "SMS": {
-            "body": "Hello from Siren SDK! This is an SMS channel config.",
+            "body": "Exciting discounts are ON",
             "channel": "SMS",
             "isFlash": False,
             "isUnicode": False,
         },
         "EMAIL": {
-            "subject": "Siren SDK Test - Email Channel Config",
+            "subject": "Exciting discount at our store online",
             "channel": "EMAIL",
             "body": "<p>Hello from Siren SDK! This is an email channel configuration.</p>",
             "attachments": [],
@@ -134,17 +134,17 @@ def run_create_channel_configurations_example(client: SirenClient):
     }
 
     try:
-        response = client.create_channel_configurations(
-            template_id_for_channel_config, channel_configurations_payload
+        response = client.create_channel_templates(
+            template_id_for_channel_templates, channel_templates_payload
         )
         if response and response.get("error") is None:
             print(
-                f"Successfully created/updated channel configurations for template '{template_id_for_channel_config}':"
+                f"Successfully created/updated channel templates for template '{template_id_for_channel_templates}':"
             )
         print(json.dumps(response, indent=2))
     except Exception as e:
         print(
-            f"Error creating/updating channel configurations for template '{template_id_for_channel_config}': {e}"
+            f"Error creating/updating channel templates for template '{template_id_for_channel_templates}': {e}"
         )
 
 
@@ -188,5 +188,5 @@ if __name__ == "__main__":
     # run_update_template_example(siren_client)
     # run_delete_template_example(siren_client)
     # run_publish_template_example(siren_client)
-    # run_create_channel_configurations_example(siren_client)
+    # run_create_channel_templates_example(siren_client)
     run_get_channel_templates_example(siren_client)
