@@ -24,6 +24,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
     - [`schedule_workflow()`](#schedule_workflow)
+    - [`add_user()`](#add_user)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
     - [Prerequisites](#prerequisites)
     - [Setup Steps](#setup-steps)
@@ -433,6 +434,45 @@ once_schedule_response = client.schedule_workflow(
     # end_date is not provided for "ONCE" type
 )
 print(once_schedule_response)
+```
+
+### `add_user()`
+
+Creates a new user or updates an existing user if a user with the given `unique_id` already exists.
+
+**Parameters:**
+*   `unique_id` (str): The unique identifier for the user. This is a required field.
+*   `first_name` (Optional[str]): The user's first name.
+*   `last_name` (Optional[str]): The user's last name.
+*   `reference_id` (Optional[str]): An external reference ID for the user.
+*   `whatsapp` (Optional[str]): The user's WhatsApp number (e.g., "+14155552671").
+*   `active_channels` (Optional[List[str]]): A list of channels the user is active on (e.g., `["EMAIL", "SMS", "WHATSAPP"]`).
+*   `active` (Optional[bool]): Boolean indicating if the user is active. Defaults to `True` if not specified by the API.
+*   `email` (Optional[str]): The user's email address.
+*   `phone` (Optional[str]): The user's phone number (e.g., "+14155552671").
+*   `attributes` (Optional[Dict[str, Any]]): A dictionary of additional custom attributes for the user.
+
+**Example:**
+```python
+# Add a new user
+new_user_payload = {
+    "unique_id": "sdk_user_123",
+    "first_name": "SDK",
+    "last_name": "TestUser",
+    "email": "sdk.testuser@example.com",
+    "active_channels": ["EMAIL"],
+    "attributes": {"source": "python_sdk_example"}
+}
+response = client.add_user(**new_user_payload)
+print(response)
+
+# Update an existing user (e.g., add a phone number)
+update_user_payload = {
+    "unique_id": "sdk_user_123", # Same unique_id
+    "phone": "+15551234567"
+}
+response = client.add_user(**update_user_payload)
+print(response)
 ```
 
 ## Getting Started for Package Developers

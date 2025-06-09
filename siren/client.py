@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from .messaging import MessagingManager
 from .templates import TemplatesManager
+from .users import UsersManager
 from .webhooks import WebhookManager
 from .workflows import WorkflowsManager
 
@@ -34,6 +35,7 @@ class SirenClient:
         self._messaging = MessagingManager(
             api_key=self.api_key, base_url=self.BASE_API_URL
         )
+        self._users = UsersManager(api_key=self.api_key, base_url=self.BASE_API_URL)
 
     def get_templates(
         self,
@@ -226,9 +228,6 @@ class SirenClient:
             workflow_id: ID of the workflow to schedule.
             input_data: Input data for the workflow.
             end_date: Optional end date for the schedule in "YYYY-MM-DD" format.
-
-        Returns:
-            A dictionary containing the API response.
         """
         return self._workflows.schedule_workflow(
             name=name,
@@ -239,6 +238,50 @@ class SirenClient:
             workflow_id=workflow_id,
             input_data=input_data,
             end_date=end_date,
+        )
+
+    def add_user(
+        self,
+        unique_id: str,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        reference_id: Optional[str] = None,
+        whatsapp: Optional[str] = None,
+        active_channels: Optional[List[str]] = None,
+        active: Optional[bool] = None,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Creates or updates a user.
+
+        Args:
+            unique_id: The unique identifier for the user.
+            first_name: The user's first name.
+            last_name: The user's last name.
+            reference_id: An external reference ID for the user.
+            whatsapp: The user's WhatsApp number.
+            active_channels: A list of channels the user is active on (e.g., ["SLACK", "EMAIL"]).
+            active: Boolean indicating if the user is active.
+            email: The user's email address.
+            phone: The user's phone number.
+            attributes: A dictionary of additional custom attributes for the user.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._users.add_user(
+            unique_id=unique_id,
+            first_name=first_name,
+            last_name=last_name,
+            reference_id=reference_id,
+            whatsapp=whatsapp,
+            active_channels=active_channels,
+            active=active,
+            email=email,
+            phone=phone,
+            attributes=attributes,
         )
 
     def send_message(
