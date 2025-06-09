@@ -19,6 +19,8 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`send_message()`](#send_message)
     - [`get_replies()`](#get_replies)
     - [`get_message_status()`](#get_message_status)
+    - [`configure_notifications_webhook()`](#configure_notifications_webhook)
+    - [`configure_inbound_message_webhook()`](#configure_inbound_message_webhook)
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
@@ -271,7 +273,35 @@ Retrieves the status of a specific message ID (e.g., "SENT", "DELIVERED", "FAILE
 message_id_to_check = "YOUR_MESSAGE_ID"
 
 status_response = client.get_message_status(message_id=message_id_to_check)
-print(status_response)
+print(f"Message status: {status_response['data']['status']}")
+```
+
+### `configure_notifications_webhook()`
+
+Configures the webhook URL for receiving status updates and other notifications from Siren.
+
+**Parameters:**
+*   `url` (str): The URL that Siren will send POST requests to for notifications.
+
+**Example:**
+```python
+webhook_url = "https://your-service.com/siren/notifications"
+response = client.configure_notifications_webhook(url=webhook_url)
+print(response)
+```
+
+### `configure_inbound_message_webhook()`
+
+Configures the webhook URL for receiving inbound messages forwarded by Siren.
+
+**Parameters:**
+*   `url` (str): The URL that Siren will send POST requests to for inbound messages.
+
+**Example:**
+```python
+webhook_url = "https://your-service.com/siren/inbound"
+response = client.configure_inbound_message_webhook(url=webhook_url)
+print(response)
 ```
 
 ### `trigger_workflow()`

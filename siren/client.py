@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from .messaging import MessagingManager
 from .templates import TemplatesManager
+from .webhooks import WebhookManager
 from .workflows import WorkflowsManager
 
 
@@ -26,6 +27,9 @@ class SirenClient:
         self._workflows = WorkflowsManager(
             api_key=self.api_key,
             base_url=self.BASE_API_URL,  # Note: WorkflowsManager uses /api/v2 internally
+        )
+        self._webhooks = WebhookManager(
+            api_key=self.api_key, base_url=self.BASE_API_URL
         )
         self._messaging = MessagingManager(
             api_key=self.api_key, base_url=self.BASE_API_URL
@@ -250,3 +254,29 @@ class SirenClient:
             A dictionary containing the API response with the message status.
         """
         return self._messaging.get_message_status(message_id=message_id)
+
+    # Webhook Management
+
+    def configure_notifications_webhook(self, url: str) -> Dict[str, Any]:
+        """
+        Configure the webhook for outgoing notifications.
+
+        Args:
+            url: The URL to be configured for the notifications webhook.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._webhooks.configure_notifications_webhook(url=url)
+
+    def configure_inbound_message_webhook(self, url: str) -> Dict[str, Any]:
+        """
+        Configure the webhook for inbound messages.
+
+        Args:
+            url: The URL to be configured for the inbound message webhook.
+
+        Returns:
+            A dictionary containing the API response.
+        """
+        return self._webhooks.configure_inbound_message_webhook(url=url)
