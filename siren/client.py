@@ -231,8 +231,6 @@ class SirenClient:
         """
         Retrieve replies for a specific message ID.
 
-        Delegates to MessagingManager.get_replies.
-
         Args:
             message_id: The ID of the message for which to retrieve replies.
 
@@ -240,3 +238,15 @@ class SirenClient:
             A dictionary containing the API response with replies.
         """
         return self._messaging.get_replies(message_id=message_id)
+
+    def get_message_status(self, message_id: str) -> Dict[str, Any]:
+        """
+        Retrieve the status of a specific message.
+
+        Args:
+            message_id: The ID of the message for which to retrieve the status.
+
+        Returns:
+            A dictionary containing the API response with the message status.
+        """
+        return self._messaging.get_message_status(message_id=message_id)

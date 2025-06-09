@@ -18,6 +18,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`get_channel_templates()`](#get_channel_templates)
     - [`send_message()`](#send_message)
     - [`get_replies()`](#get_replies)
+    - [`get_message_status()`](#get_message_status)
     - [`trigger_workflow()`](#trigger_workflow)
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
@@ -255,6 +256,22 @@ message_id_to_check = "YOUR_MESSAGE_ID"
 
 replies_response = client.get_replies(message_id=message_id_to_check)
 print(replies_response)
+```
+
+### `get_message_status()`
+
+Retrieves the status of a specific message ID (e.g., "SENT", "DELIVERED", "FAILED").
+
+**Parameters:**
+*   `message_id` (str): The ID of the message for which to retrieve the status.
+
+**Example:**
+```python
+# IMPORTANT: Replace with an actual message ID
+message_id_to_check = "YOUR_MESSAGE_ID"
+
+status_response = client.get_message_status(message_id=message_id_to_check)
+print(status_response)
 ```
 
 ### `trigger_workflow()`

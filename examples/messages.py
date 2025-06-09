@@ -87,6 +87,30 @@ def get_replies_example(client: SirenClient, message_id: str):
         print(f"An error occurred while getting message replies: {e}")
 
 
+def get_message_status_example(client: SirenClient, message_id: str):
+    """Demonstrates retrieving the status for a message."""
+    print("\nAttempting to get message status...")
+    # IMPORTANT: Replace with an actual message ID
+    # Using an ID from a previous successful run for demonstration
+    message_id_to_check_status = message_id
+
+    try:
+        print(f"Fetching status for message ID: {message_id_to_check_status}")
+        response = client.get_message_status(message_id=message_id_to_check_status)
+        print("Get message status API response:")
+        print(response)
+
+        if response and response.get("data") and response["data"].get("status"):
+            print(f"Message Status: {response['data']['status']}")
+        elif response and response.get("error"):
+            print(f"Failed to get message status. Error: {response['error']}")
+        else:
+            print("Received an unexpected response structure for get_message_status.")
+
+    except Exception as e:
+        print(f"An error occurred while getting the message status: {e}")
+
+
 if __name__ == "__main__":
     load_dotenv()
     api_key = os.getenv("SIREN_API_KEY")
@@ -96,5 +120,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     siren_client = SirenClient(api_key=api_key)
-    send_message_example(siren_client)
-    get_replies_example(siren_client, "EXAMPLE_MESSAGE_ID")
+    # send_message_example(siren_client)
+    # get_replies_example(
+    #     siren_client, "9004b6b0-3e77-4add-9541-56ba28c37f27"
+    # )
+    get_message_status_example(siren_client, "c53539ce-2d74-4071-b671-ead6c8465b5b")

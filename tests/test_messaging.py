@@ -14,6 +14,66 @@ BASE_URL = "https://api.dev.trysiren.io"
 class TestMessagingManager:
     """Tests for the MessagingManager class."""
 
+    def test_get_message_status_success(self, requests_mock: RequestsMocker):
+        """Test successful retrieval of message status."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_status_123"
+        expected_status = {"status": "DELIVERED"}
+        mock_response_data = {"data": expected_status, "error": None}
+
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
+            json=mock_response_data,
+            status_code=200,
+        )
+        response = manager.get_message_status(message_id=message_id)
+        assert response == mock_response_data
+        assert response["data"] == expected_status
+
+    def test_get_message_status_http_error_json_response(
+        self, requests_mock: RequestsMocker
+    ):
+        """Test HTTP error with JSON response during get_message_status."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_status_error_json"
+        error_response = {"error": "Not Found", "message": "Message ID does not exist."}
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
+            json=error_response,
+            status_code=404,
+        )
+        response = manager.get_message_status(message_id=message_id)
+        assert response == error_response
+
+    def test_get_message_status_http_error_no_json_response(
+        self, requests_mock: RequestsMocker
+    ):
+        """Test HTTP error without JSON response during get_message_status."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_status_error_no_json"
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
+            text="Server Error",
+            status_code=500,
+        )
+        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+            manager.get_message_status(message_id=message_id)
+        assert excinfo.value.response.status_code == 500
+        assert excinfo.value.response.text == "Server Error"
+
+    def test_get_message_status_request_exception(self, requests_mock: RequestsMocker):
+        """Test requests.exceptions.RequestException during get_message_status."""
+        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        message_id = "msg_status_req_exception"
+        requests_mock.get(
+            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
+            exc=requests.exceptions.Timeout("Connection timed out"),
+        )
+        with pytest.raises(requests.exceptions.RequestException):
+            manager.get_message_status(message_id=message_id)
+
+    """Tests for the MessagingManager class."""
+
     def test_send_message_success(self, requests_mock: RequestsMocker):
         """Test successful message sending."""
         manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
@@ -264,4 +324,20 @@ def test_siren_client_get_replies(mocker):
     response = client.get_replies(message_id=message_id)
 
     mock_messaging_manager_get_replies.assert_called_once_with(message_id=message_id)
+    assert response == mock_response
+
+
+def test_siren_client_get_message_status(mocker):
+    """Test SirenClient.get_message_status calls MessagingManager correctly."""
+    client = SirenClient(api_key=API_KEY)
+    mock_messaging_manager_get_status = mocker.patch.object(
+        client._messaging, "get_message_status"
+    )
+    mock_response = {"data": {"status": "SENT"}}
+    mock_messaging_manager_get_status.return_value = mock_response
+    message_id = "msg_client_status_test"
+
+    response = client.get_message_status(message_id=message_id)
+
+    mock_messaging_manager_get_status.assert_called_once_with(message_id=message_id)
     assert response == mock_response
