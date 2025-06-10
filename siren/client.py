@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List, Optional
 
+from pydantic import EmailStr
+
 from .messaging import MessagingManager
 from .models.user import User
 from .templates import TemplatesManager
@@ -243,34 +245,40 @@ class SirenClient:
 
     def add_user(
         self,
-        unique_id: str,
+        unique_id: Optional[str] = None,
         first_name: Optional[str] = None,
         last_name: Optional[str] = None,
         reference_id: Optional[str] = None,
         whatsapp: Optional[str] = None,
         active_channels: Optional[List[str]] = None,
         active: Optional[bool] = None,
-        email: Optional[str] = None,
+        email: Optional[EmailStr] = None,
         phone: Optional[str] = None,
         attributes: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> User:
         """
-        Creates or updates a user.
+        Creates a user.
 
         Args:
-            unique_id: The unique identifier for the user.
-            first_name: The user's first name.
-            last_name: The user's last name.
-            reference_id: An external reference ID for the user.
-            whatsapp: The user's WhatsApp number.
-            active_channels: A list of channels the user is active on (e.g., ["SLACK", "EMAIL"]).
-            active: Boolean indicating if the user is active.
-            email: The user's email address.
-            phone: The user's phone number.
-            attributes: A dictionary of additional custom attributes for the user.
+            unique_id: Unique identifier for the user.
+            first_name: The first name of the user.
+            last_name: The last name of the user.
+            reference_id: Reference ID for the user.
+            whatsapp: WhatsApp number for the user.
+            active_channels: List of active channels for the user.
+            active: Whether the user is active.
+            email: Email address of the user.
+            phone: Phone number of the user.
+            attributes: Additional custom attributes for the user.
+            **kwargs: Additional user data.
 
         Returns:
-            User: A User model representing the created/updated user.
+            User: A User model representing the created or updated user.
+
+        Raises:
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
         """
         return self._users.add_user(
             unique_id=unique_id,
@@ -283,6 +291,58 @@ class SirenClient:
             email=email,
             phone=phone,
             attributes=attributes,
+            **kwargs,
+        )
+
+    def update_user(
+        self,
+        unique_id: str,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        reference_id: Optional[str] = None,
+        whatsapp: Optional[str] = None,
+        active_channels: Optional[List[str]] = None,
+        active: Optional[bool] = None,
+        email: Optional[EmailStr] = None,
+        phone: Optional[str] = None,
+        attributes: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> User:
+        """
+        Updates a user.
+
+        Args:
+            unique_id: The unique ID of the user to update.
+            first_name: The first name of the user.
+            last_name: The last name of the user.
+            reference_id: Reference ID for the user.
+            whatsapp: WhatsApp number for the user.
+            active_channels: List of active channels for the user.
+            active: Whether the user is active.
+            email: Email address of the user.
+            phone: Phone number of the user.
+            attributes: Additional custom attributes for the user.
+            **kwargs: Additional user data.
+
+        Returns:
+            User: A User model representing the updated user.
+
+        Raises:
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+        """
+        return self._users.update_user(
+            unique_id=unique_id,
+            first_name=first_name,
+            last_name=last_name,
+            reference_id=reference_id,
+            whatsapp=whatsapp,
+            active_channels=active_channels,
+            active=active,
+            email=email,
+            phone=phone,
+            attributes=attributes,
+            **kwargs,
         )
 
     def send_message(

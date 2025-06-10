@@ -28,7 +28,7 @@ class UserBase(BaseModel):
         extra = "ignore"
 
 
-class UserCreateRequest(UserBase):
+class UserRequest(UserBase):
     """Request model for creating or updating a user."""
 
     pass

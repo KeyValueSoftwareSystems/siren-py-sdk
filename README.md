@@ -25,6 +25,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
     - [`schedule_workflow()`](#schedule_workflow)
     - [`add_user()`](#add_user)
+    - [`update_user()`](#update_user)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
     - [Prerequisites](#prerequisites)
     - [Setup Steps](#setup-steps)
@@ -473,6 +474,44 @@ update_user_payload = {
 }
 response = client.add_user(**update_user_payload)
 print(response)
+```
+
+### `update_user()`
+
+Updates an existing user's information.
+
+**Parameters:**
+*   `unique_id` (str): The unique identifier of the user to update. This is a required field and identifies which user to update.
+*   `first_name` (Optional[str]): The user's first name.
+*   `last_name` (Optional[str]): The user's last name.
+*   `reference_id` (Optional[str]): An external reference ID for the user.
+*   `whatsapp` (Optional[str]): The user's WhatsApp number (e.g., "+14155552671").
+*   `active_channels` (Optional[List[str]]): A list of channels the user is active on (e.g., `["EMAIL", "SMS", "WHATSAPP"]`).
+*   `active` (Optional[bool]): Boolean indicating if the user is active.
+*   `email` (Optional[str]): The user's email address.
+*   `phone` (Optional[str]): The user's phone number (e.g., "+14155552671").
+*   `attributes` (Optional[Dict[str, Any]]): A dictionary of additional custom attributes for the user.
+
+**Example:**
+```python
+# Update user information
+update_response = client.update_user(
+    unique_id="sdk_user_123",
+    first_name="Jane",
+    last_name="Smith",
+    email="jane.smith@example.com",
+    active_channels=["EMAIL", "SLACK"],
+    attributes={"department": "Engineering", "role": "Developer"}
+)
+print(update_response)
+
+# Update only specific fields
+partial_update_response = client.update_user(
+    unique_id="sdk_user_123",
+    phone="+15551234567",
+    active=True
+)
+print(partial_update_response)
 ```
 
 ## Getting Started for Package Developers

@@ -200,7 +200,129 @@ class TestUsersManager:
         assert isinstance(
             excinfo.value.original_exception, requests.exceptions.ConnectionError
         )
-        assert "network or connection error" in excinfo.value.message.lower()
+        assert "Network or connection error" in excinfo.value.message
+
+    @patch("siren.users.requests.put")
+    def test_update_user_success(self, mock_put, users_manager: UsersManager):
+        """Test successful user update returns a User model instance."""
+        # Mock API response
+        mock_api_json_response = {
+            "data": {
+                "id": "user_api_generated_id_001",
+                "uniqueId": MOCK_USER_ID,
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "email": "jane.smith@example.com",
+                "activeChannels": ["SLACK"],
+                "attributes": {"updated_field": "value2"},
+                "referenceId": "020",
+                "whatsapp": "+919632323154",
+                "active": True,
+                "phone": None,
+                "createdAt": "2023-01-01T12:00:00Z",
+                "updatedAt": "2023-01-02T12:00:00Z",
+                "avatarUrl": None,
+            },
+            "error": None,
+        }
+        mock_put.return_value = mock_response(200, json_data=mock_api_json_response)
+
+        # Test payload with snake_case keys (SDK input)
+        payload = {
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane.smith@example.com",
+            "active_channels": ["SLACK"],
+            "attributes": {"updated_field": "value2"},
+            "reference_id": "020",
+            "whatsapp": "+919632323154",
+        }
+        response = users_manager.update_user(MOCK_USER_ID, **payload)
+
+        # Expected API request with camelCase keys
+        expected_headers = {
+            "Authorization": f"Bearer {MOCK_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        expected_json_payload = {
+            "uniqueId": MOCK_USER_ID,
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "email": "jane.smith@example.com",
+            "activeChannels": ["SLACK"],
+            "attributes": {"updated_field": "value2"},
+            "referenceId": "020",
+            "whatsapp": "+919632323154",
+        }
+        mock_put.assert_called_once_with(
+            f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
+            json=expected_json_payload,
+            headers=expected_headers,
+            timeout=10,
+        )
+
+        # Verify User model fields
+        assert isinstance(response, User)
+        assert response.id == "user_api_generated_id_001"
+        assert response.unique_id == MOCK_USER_ID
+        assert response.first_name == "Jane"
+        assert response.last_name == "Smith"
+        assert response.email == "jane.smith@example.com"
+        assert response.active_channels == ["SLACK"]
+        assert response.reference_id == "020"
+        assert response.whatsapp == "+919632323154"
+        assert response.updated_at == "2023-01-02T12:00:00Z"
+
+    @patch("siren.users.requests.put")
+    def test_update_user_api_error_returns_json(
+        self, mock_put, users_manager: UsersManager
+    ):
+        """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
+        # Mock API error response
+        mock_api_error_payload = {
+            "error": {
+                "errorCode": "USER_NOT_FOUND",
+                "message": "User with the specified unique ID does not exist.",
+            }
+        }
+        status_code = 404
+
+        err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
+        http_error = requests.exceptions.HTTPError(response=err_response_obj)
+        err_response_obj.raise_for_status.side_effect = http_error
+        mock_put.return_value = err_response_obj
+
+        with pytest.raises(SirenAPIError) as excinfo:
+            users_manager.update_user(MOCK_USER_ID, first_name="Jane")
+
+        # Verify error details
+        assert excinfo.value.status_code == status_code
+        assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
+        assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
+
+    @patch("siren.users.requests.put")
+    def test_update_user_validation_error(self, mock_put, users_manager: UsersManager):
+        """Test invalid parameters raise SirenSDKError."""
+        with pytest.raises(SirenSDKError) as excinfo:
+            users_manager.update_user(MOCK_USER_ID, email="invalid-email")
+
+        assert "Invalid parameters" in excinfo.value.message
+        mock_put.assert_not_called()
+
+    @patch("siren.users.requests.put")
+    def test_update_user_request_exception(self, mock_put, users_manager: UsersManager):
+        """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
+        # Mock network error
+        original_exception = requests.exceptions.ConnectionError(
+            "Simulated connection failed"
+        )
+        mock_put.side_effect = original_exception
+
+        with pytest.raises(SirenSDKError) as excinfo:
+            users_manager.update_user(MOCK_USER_ID, first_name="Jane")
+
+        assert excinfo.value.original_exception == original_exception
+        assert "Network or connection error" in excinfo.value.message
 
 
 class TestSirenClientUsers:
@@ -249,4 +371,50 @@ class TestSirenClientUsers:
         assert call_args["last_name"] == payload["last_name"]
         assert call_args["email"] == payload["email"]
         assert call_args["attributes"] == payload["attributes"]
+        assert response == mock_user_instance
+
+    @patch("siren.client.UsersManager.update_user")
+    def test_client_update_user_delegates_to_manager(
+        self, mock_manager_update_user, siren_client: SirenClient
+    ):
+        """Test that SirenClient.update_user correctly delegates to UsersManager.update_user."""
+        # Test data
+        unique_id = "client_user_001"
+        payload = {
+            "first_name": "Updated",
+            "last_name": "User",
+            "email": "updated.user@example.com",
+            "attributes": {"source": "update_test"},
+        }
+
+        # Mock response
+        mock_user_instance = User(
+            id="user_api_id_123",
+            uniqueId=unique_id,
+            createdAt="2023-01-01T10:00:00Z",
+            updatedAt="2023-01-02T15:00:00Z",
+            firstName="Updated",
+            lastName="User",
+            email="updated.user@example.com",
+            attributes={"source": "update_test"},
+            referenceId=None,
+            whatsapp=None,
+            activeChannels=None,
+            active=None,
+            phone=None,
+            avatarUrl=None,
+        )
+        mock_manager_update_user.return_value = mock_user_instance
+
+        response = siren_client.update_user(unique_id, **payload)
+
+        # Verify delegation
+        mock_manager_update_user.assert_called_once()
+        call_args = mock_manager_update_user.call_args
+        call_kwargs = call_args[1]
+        assert call_kwargs["unique_id"] == unique_id
+        assert call_kwargs["first_name"] == payload["first_name"]
+        assert call_kwargs["last_name"] == payload["last_name"]
+        assert call_kwargs["email"] == payload["email"]
+        assert call_kwargs["attributes"] == payload["attributes"]
         assert response == mock_user_instance
