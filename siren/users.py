@@ -1,8 +1,11 @@
 """Manages user-related operations for the Siren API client."""
 
-from typing import Any, Dict, List, Optional
-
 import requests
+from pydantic import ValidationError
+
+from .exceptions import SirenAPIError, SirenSDKError
+from .models.user import User, UserAPIResponse, UserCreateRequest
+from .utils import parse_json_response
 
 
 class UsersManager:
@@ -18,41 +21,23 @@ class UsersManager:
         """
         self.api_key = api_key
         self.base_url = base_url
+        # TODO: Make timeout configurable through client initialization
+        self.timeout = 10
 
-    def add_user(  # noqa: C901
-        self,
-        unique_id: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        whatsapp: Optional[str] = None,
-        active_channels: Optional[List[str]] = None,
-        active: Optional[bool] = None,
-        email: Optional[str] = None,
-        phone: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def add_user(self, **user_data) -> User:
         """
-        Creates or updates a user.
+        Creates a user.
 
         Args:
-            unique_id: The unique identifier for the user.
-            first_name: The user's first name.
-            last_name: The user's last name.
-            reference_id: An external reference ID for the user.
-            whatsapp: The user's WhatsApp number.
-            active_channels: A list of channels the user is active on (e.g., ["SLACK", "EMAIL"]).
-            active: Boolean indicating if the user is active.
-            email: The user's email address.
-            phone: The user's phone number.
-            attributes: A dictionary of additional custom attributes for the user.
+            **user_data: User attributes matching the UserCreateRequest model fields.
+                       Use snake_case for field names (e.g., first_name, unique_id).
 
         Returns:
-            A dictionary containing the API response.
+            User: A User model representing the created/updated user.
 
         Raises:
-            requests.exceptions.HTTPError: If the API returns an HTTP error status.
-            requests.exceptions.RequestException: For other request-related errors.
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
         """
         url = f"{self.base_url}/api/v1/public/users"
         headers = {
@@ -60,44 +45,59 @@ class UsersManager:
             "Content-Type": "application/json",
         }
 
-        payload: Dict[str, Any] = {"uniqueId": unique_id}
-
-        if first_name is not None:
-            payload["firstName"] = first_name
-        if last_name is not None:
-            payload["lastName"] = last_name
-        if reference_id is not None:
-            payload["referenceId"] = reference_id
-        if whatsapp is not None:
-            payload["whatsapp"] = whatsapp
-        if active_channels is not None:
-            payload["activeChannels"] = active_channels
-        if active is not None:
-            payload["active"] = active
-        if email is not None:
-            payload["email"] = email
-        if phone is not None:
-            payload["phone"] = phone
-        if attributes is not None:
-            payload["attributes"] = attributes
-
-        final_payload = {
-            k: v for k, v in payload.items() if v is not None or k == "uniqueId"
-        }
-
         try:
+            # Prepare the request with Pydantic validation
+            user_request = UserCreateRequest.model_validate(user_data)
+            payload = user_request.model_dump(by_alias=True, exclude_none=True)
+
+            # Make API request
             response = requests.post(
-                url, headers=headers, json=final_payload, timeout=10
+                url, headers=headers, json=payload, timeout=self.timeout
             )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as http_err:
-            try:
-                # Attempt to parse JSON error response from API
-                error_json = http_err.response.json()
-                return error_json
-            except requests.exceptions.JSONDecodeError:
-                # If error response is not JSON, re-raise the original HTTPError
-                raise http_err
-        except requests.exceptions.RequestException as req_err:
-            raise req_err
+            response_json = parse_json_response(response)
+
+            # Parse the response
+            parsed_response = UserAPIResponse.model_validate(response_json)
+
+            # Handle success case (200 OK)
+            if response.status_code == 200 and parsed_response.data:
+                return parsed_response.data
+
+            # Handle API error
+            # API error response structure:
+            # {
+            #     "data": null,
+            #     "error": { "errorCode": "...", "message": "..." },
+            #     "errors": [{ "errorCode": "...", "message": "..." }],
+            #     "meta": null
+            # }
+            # Status codes:
+            # 200 - OK
+            # 400 - BAD REQUEST
+            # 401 - UNAUTHORISED
+            # 404 - NOT FOUND
+            if response.status_code in (400, 401, 404):
+                error_detail = parsed_response.error_detail
+                if error_detail:
+                    raise SirenAPIError(
+                        error_detail=error_detail,
+                        status_code=response.status_code,
+                        raw_response=response_json,
+                    )
+
+            # Fallback error for unexpected status codes
+            raise SirenSDKError(
+                message=f"Unexpected API response. Status: {response.status_code}",
+                status_code=response.status_code,
+                raw_response=response_json,
+            )
+
+        except ValidationError as e:
+            # Input validation error
+            raise SirenSDKError(f"Invalid parameters: {e}", original_exception=e)
+
+        except requests.exceptions.RequestException as e:
+            # Network or connection error
+            raise SirenSDKError(
+                f"Network or connection error: {e}", original_exception=e
+            )

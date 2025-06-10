@@ -8,9 +8,11 @@ import pytest
 import requests
 
 from siren.client import SirenClient
+from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.models.user import User
 from siren.users import UsersManager
 
-# Mock API responses
+# Test constants
 MOCK_API_KEY = "test_api_key"
 MOCK_BASE_URL = "https://api.siren.com"
 MOCK_USER_ID = "user_123"
@@ -49,13 +51,30 @@ class TestUsersManager:
 
     @patch("siren.users.requests.post")
     def test_add_user_success(self, mock_post, users_manager: UsersManager):
-        """Test successful user creation/update."""
-        expected_response = {
-            "status": "success",
-            "data": {"id": MOCK_USER_ID, "uniqueId": MOCK_USER_ID},
+        """Test successful user creation/update returns a User model instance."""
+        # Mock API response with all possible user fields
+        mock_api_json_response = {
+            "data": {
+                "id": "user_api_generated_id_001",
+                "uniqueId": MOCK_USER_ID,
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com",
+                "activeChannels": ["EMAIL"],
+                "attributes": {"custom_field": "value1"},
+                "referenceId": None,
+                "whatsapp": None,
+                "active": True,
+                "phone": None,
+                "createdAt": "2023-01-01T12:00:00Z",
+                "updatedAt": "2023-01-01T12:00:00Z",
+                "avatarUrl": None,
+            },
+            "error": None,
         }
-        mock_post.return_value = mock_response(200, expected_response)
+        mock_post.return_value = mock_response(200, json_data=mock_api_json_response)
 
+        # Test payload with snake_case keys (SDK input)
         payload = {
             "unique_id": MOCK_USER_ID,
             "first_name": "John",
@@ -66,80 +85,88 @@ class TestUsersManager:
         }
         response = users_manager.add_user(**payload)
 
+        # Expected API request with camelCase keys
         expected_headers = {
             "Authorization": f"Bearer {MOCK_API_KEY}",
             "Content-Type": "application/json",
         }
-        mock_post.assert_called_once_with(
-            f"{MOCK_BASE_URL}/api/v1/public/users",
-            json={
-                "uniqueId": MOCK_USER_ID,
-                "firstName": "John",
-                "lastName": "Doe",
-                "email": "john.doe@example.com",
-                "activeChannels": ["EMAIL"],
-                "attributes": {"custom_field": "value1"},
-            },
-            headers=expected_headers,
-            timeout=10,
-        )
-        assert response == expected_response
-
-    @patch("siren.users.requests.post")
-    def test_add_user_minimal_payload_success(
-        self, mock_post, users_manager: UsersManager
-    ):
-        """Test successful user creation/update with minimal payload."""
-        expected_response = {
-            "status": "success",
-            "data": {"id": MOCK_USER_ID, "uniqueId": MOCK_USER_ID},
-        }
-        mock_post.return_value = mock_response(200, expected_response)
-
-        response = users_manager.add_user(unique_id=MOCK_USER_ID)
-
-        expected_headers = {
-            "Authorization": f"Bearer {MOCK_API_KEY}",
-            "Content-Type": "application/json",
+        expected_json_payload = {
+            "uniqueId": MOCK_USER_ID,
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@example.com",
+            "activeChannels": ["EMAIL"],
+            "attributes": {"custom_field": "value1"},
         }
         mock_post.assert_called_once_with(
             f"{MOCK_BASE_URL}/api/v1/public/users",
-            json={"uniqueId": MOCK_USER_ID},
+            json=expected_json_payload,
             headers=expected_headers,
             timeout=10,
         )
-        assert response == expected_response
+
+        # Verify all User model fields
+        assert isinstance(response, User)
+        assert response.id == "user_api_generated_id_001"
+        assert response.unique_id == MOCK_USER_ID
+        assert response.first_name == "John"
+        assert response.last_name == "Doe"
+        assert response.email == "john.doe@example.com"
+        assert response.active_channels == ["EMAIL"]
+        assert response.attributes == {"custom_field": "value1"}
+        assert response.created_at == "2023-01-01T12:00:00Z"
+        assert response.updated_at == "2023-01-01T12:00:00Z"
+        assert response.active is True
+        assert response.reference_id is None
+        assert response.whatsapp is None
+        assert response.phone is None
+        assert response.avatar_url is None
 
     @patch("siren.users.requests.post")
     def test_add_user_api_error_returns_json(
         self, mock_post, users_manager: UsersManager
     ):
-        """Test API error (e.g., 400, 422) that returns a JSON body."""
-        error_response_json = {
-            "error": "Validation failed",
-            "details": {"uniqueId": "is required"},
+        """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
+        # Mock API error response with validation details
+        mock_api_error_payload = {
+            "error": {
+                "errorCode": "VALIDATION_ERROR",
+                "message": "Validation failed on one or more fields.",
+                "details": [
+                    {
+                        "field": "uniqueId",
+                        "message": "This field is required and cannot be empty.",
+                    },
+                    {"field": "email", "message": "Not a valid email address."},
+                ],
+            }
         }
+        status_code = 400
 
-        # Create a mock response object that will be associated with the HTTPError
-        err_response_obj = mock_response(422, error_response_json)
+        err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
         http_error = requests.exceptions.HTTPError(response=err_response_obj)
-        err_response_obj.raise_for_status.side_effect = (
-            http_error  # Configure raise_for_status to raise the error
+        err_response_obj.raise_for_status.side_effect = http_error
+        mock_post.return_value = err_response_obj
+
+        with pytest.raises(SirenAPIError) as excinfo:
+            users_manager.add_user(unique_id=MOCK_USER_ID)
+
+        # Verify error details
+        assert excinfo.value.status_code == status_code
+        assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
+        assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
+        assert (
+            excinfo.value.error_detail.details
+            == mock_api_error_payload["error"]["details"]
         )
-
-        mock_post.return_value = (
-            err_response_obj  # The session.post call returns this response object
-        )
-
-        response = users_manager.add_user(unique_id=MOCK_USER_ID)
-
-        assert response == error_response_json
 
     @patch("siren.users.requests.post")
     def test_add_user_http_error_no_json(self, mock_post, users_manager: UsersManager):
-        """Test API error (e.g., 500) that does not return a JSON body."""
-        # Mock response that raises HTTPError but .json() call on response raises JSONDecodeError
-        err_response_obj = mock_response(500, text_data="Internal Server Error")
+        """Test API error (500) without JSON body raises SirenSDKError."""
+        # Mock non-JSON error response
+        status_code = 500
+        error_text = "Internal Server Error - Not JSON"
+        err_response_obj = mock_response(status_code, text_data=error_text)
         http_error = requests.exceptions.HTTPError(response=err_response_obj)
         err_response_obj.raise_for_status.side_effect = http_error
         err_response_obj.json.side_effect = requests.exceptions.JSONDecodeError(
@@ -148,29 +175,43 @@ class TestUsersManager:
 
         mock_post.return_value = err_response_obj
 
-        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+        with pytest.raises(SirenSDKError) as excinfo:
             users_manager.add_user(unique_id=MOCK_USER_ID)
 
-        assert excinfo.value.response.status_code == 500
-        assert excinfo.value.response.text == "Internal Server Error"
+        assert isinstance(
+            excinfo.value.original_exception, requests.exceptions.JSONDecodeError
+        )
+        assert "API response was not valid JSON" in excinfo.value.message
+        assert error_text in excinfo.value.message
 
     @patch("siren.users.requests.post")
     def test_add_user_request_exception(self, mock_post, users_manager: UsersManager):
-        """Test handling of requests.exceptions.RequestException."""
-        mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
+        """Test handling of requests.exceptions.RequestException (e.g., network error) raises SirenSDKError."""
+        # Mock network error
+        original_exception = requests.exceptions.ConnectionError(
+            "Simulated connection failed"
+        )
+        mock_post.side_effect = original_exception
 
-        with pytest.raises(requests.exceptions.RequestException):
+        with pytest.raises(SirenSDKError) as excinfo:
             users_manager.add_user(unique_id=MOCK_USER_ID)
+
+        assert excinfo.value.original_exception == original_exception
+        assert isinstance(
+            excinfo.value.original_exception, requests.exceptions.ConnectionError
+        )
+        assert "network or connection error" in excinfo.value.message.lower()
 
 
 class TestSirenClientUsers:
     """Tests for user management methods exposed on SirenClient."""
 
-    @patch.object(UsersManager, "add_user")
+    @patch("siren.client.UsersManager.add_user")
     def test_client_add_user_delegates_to_manager(
         self, mock_manager_add_user, siren_client: SirenClient
     ):
         """Test that SirenClient.add_user correctly delegates to UsersManager.add_user."""
+        # Test data
         payload = {
             "unique_id": "client_user_001",
             "first_name": "Client",
@@ -178,27 +219,34 @@ class TestSirenClientUsers:
             "email": "client.user@example.com",
             "attributes": {"source": "client_test"},
         }
-        expected_return_value = {"id": "client_user_001", "status": "delegated"}
-        mock_manager_add_user.return_value = expected_return_value
 
-        # This is the payload passed to the client method
-        payload_to_client = payload.copy()
+        # Mock response
+        mock_user_instance = User(
+            id="user_api_id_123",
+            uniqueId="client_user_001",
+            createdAt="2023-01-01T10:00:00Z",
+            updatedAt="2023-01-01T10:00:00Z",
+            firstName="Client",
+            lastName="User",
+            email="client.user@example.com",
+            attributes={"source": "client_test"},
+            referenceId=None,
+            whatsapp=None,
+            activeChannels=None,
+            active=None,
+            phone=None,
+            avatarUrl=None,
+        )
+        mock_manager_add_user.return_value = mock_user_instance
 
-        # This is the expected payload for the manager method, including defaults
-        expected_payload_for_manager = {
-            "unique_id": "client_user_001",
-            "first_name": "Client",
-            "last_name": "User",
-            "reference_id": None,
-            "whatsapp": None,
-            "active_channels": None,
-            "active": None,
-            "email": "client.user@example.com",
-            "phone": None,
-            "attributes": {"source": "client_test"},
-        }
+        response = siren_client.add_user(**payload)
 
-        response = siren_client.add_user(**payload_to_client)
-
-        mock_manager_add_user.assert_called_once_with(**expected_payload_for_manager)
-        assert response == expected_return_value
+        # Verify delegation
+        mock_manager_add_user.assert_called_once()
+        call_args = mock_manager_add_user.call_args[1]
+        assert call_args["unique_id"] == payload["unique_id"]
+        assert call_args["first_name"] == payload["first_name"]
+        assert call_args["last_name"] == payload["last_name"]
+        assert call_args["email"] == payload["email"]
+        assert call_args["attributes"] == payload["attributes"]
+        assert response == mock_user_instance

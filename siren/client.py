@@ -3,6 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from .messaging import MessagingManager
+from .models.user import User
 from .templates import TemplatesManager
 from .users import UsersManager
 from .webhooks import WebhookManager
@@ -252,7 +253,7 @@ class SirenClient:
         email: Optional[str] = None,
         phone: Optional[str] = None,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> User:
         """
         Creates or updates a user.
 
@@ -269,7 +270,7 @@ class SirenClient:
             attributes: A dictionary of additional custom attributes for the user.
 
         Returns:
-            A dictionary containing the API response.
+            User: A User model representing the created/updated user.
         """
         return self._users.add_user(
             unique_id=unique_id,

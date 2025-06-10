@@ -32,6 +32,7 @@ keywords = ["siren", "notifications", "api", "sdk", "ai", "messaging", "communic
 
 dependencies = [
     "requests>=2.25.0", # HTTP client library
+    "pydantic[email]>=2.0,<3.0", # Data validation and settings management
 ]
 
 [project.urls]

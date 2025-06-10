@@ -5,38 +5,42 @@ import os
 import sys
 
 from siren.client import SirenClient
+from siren.exceptions import SirenAPIError, SirenSDKError
 
-# It allows the script to be run directly from the examples directory.
+# Allow running from examples directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-def run_add_user_example(client: SirenClient):
-    """Demonstrates adding a new user."""
-    print("\n--- Running Add User Example ---")
-
-    user_payload_1 = {
-        "unique_id": "example_user_sdk_001",
-        "first_name": "Alan",
-        "last_name": "Watts",
-        "email": "user.one.sdk@example.com",
-        "phone": "+9198727",
-        "whatsapp": "+9198727",
+def add_user_example(client: SirenClient) -> None:
+    """Example of adding a user using the Siren SDK."""
+    # Example user payload
+    user = {
+        "unique_id": "john_doe_003",
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "john.doe@company.com",
+        "phone": "+919876543210",
+        "whatsapp": "+919876543210",
         "active_channels": ["EMAIL", "SMS", "WHATSAPP"],
         "active": True,
-        "reference_id": "ext_ref_001_sdk",
+        "reference_id": "EMP_001",
         "attributes": {
-            "department": "SDK Examples",
+            "department": "Engineering",
+            "role": "Senior Developer",
+            "location": "Bangalore",
             "preferred_language": "en",
-            "tags": ["sdk_test", "new_user"],
         },
     }
+
     try:
-        print(f"\nAttempting to add/update user: {user_payload_1['unique_id']}")
-        response = client.add_user(**user_payload_1)
-        print("API Response for user 1:")
-        print(response)
-    except Exception as e:
-        print(f"An unexpected error occurred for user 1: {e}")
+        # Call the SDK method
+        created_user = client.add_user(**user)
+        print(f"User ID: {created_user.id}")
+
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
 
 
 if __name__ == "__main__":
@@ -45,6 +49,5 @@ if __name__ == "__main__":
         print("Error: SIREN_API_KEY environment variable not set.")
         sys.exit(1)
 
-    siren_client = SirenClient(api_key=api_key)
-
-    run_add_user_example(siren_client)
+    client = SirenClient(api_key=api_key)
+    add_user_example(client)
