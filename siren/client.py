@@ -345,6 +345,22 @@ class SirenClient:
             **kwargs,
         )
 
+    def delete_user(self, unique_id: str) -> bool:
+        """
+        Deletes a user.
+
+        Args:
+            unique_id: The unique ID of the user to delete.
+
+        Returns:
+            bool: True if the user was successfully deleted.
+
+        Raises:
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+        """
+        return self._users.delete_user(unique_id)
+
     def send_message(
         self,
         template_name: str,

@@ -26,6 +26,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
     - [`schedule_workflow()`](#schedule_workflow)
     - [`add_user()`](#add_user)
     - [`update_user()`](#update_user)
+    - [`delete_user()`](#delete_user)
   - [Getting Started for Package Developers](#getting-started-for-package-developers)
     - [Prerequisites](#prerequisites)
     - [Setup Steps](#setup-steps)
@@ -512,6 +513,23 @@ partial_update_response = client.update_user(
     active=True
 )
 print(partial_update_response)
+```
+
+### `delete_user()`
+
+Deletes an existing user.
+
+**Parameters:**
+*   `unique_id` (str): The unique identifier of the user to delete. This is a required field.
+
+**Returns:**
+*   `bool`: Returns `True` if the user was successfully deleted.
+
+**Example:**
+```python
+# Delete a user
+deleted = client.delete_user("sdk_user_123")
+print(f"User deleted: {deleted}")  # True
 ```
 
 ## Getting Started for Package Developers

@@ -170,3 +170,61 @@ class UsersManager:
             raise SirenSDKError(
                 f"Network or connection error: {e}", original_exception=e
             )
+
+    def delete_user(self, unique_id: str) -> bool:
+        """
+        Deletes a user.
+
+        Args:
+            unique_id: The unique ID of the user to delete.
+
+        Returns:
+            bool: True if the user was successfully deleted.
+
+        Raises:
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+        """
+        url = f"{self.base_url}/api/v1/public/users/{unique_id}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        try:
+            # Make API request
+            response = requests.delete(url, headers=headers, timeout=self.timeout)
+
+            # Handle success case (204 No Content)
+            if response.status_code == 204:
+                return True
+
+            # Parse response for error cases
+            response_json = parse_json_response(response)
+            parsed_response = UserAPIResponse.model_validate(response_json)
+
+            # Handle API error
+            if response.status_code in (400, 401, 404):
+                error_detail = parsed_response.error_detail
+                if error_detail:
+                    raise SirenAPIError(
+                        error_detail=error_detail,
+                        status_code=response.status_code,
+                        raw_response=response_json,
+                    )
+
+            # Fallback error for unexpected status codes
+            raise SirenSDKError(
+                message=f"Unexpected API response. Status: {response.status_code}",
+                status_code=response.status_code,
+                raw_response=response_json,
+            )
+
+        except ValidationError as e:
+            # Input validation error
+            raise SirenSDKError(f"Invalid parameters: {e}", original_exception=e)
+
+        except requests.exceptions.RequestException as e:
+            # Network or connection error
+            raise SirenSDKError(
+                f"Network or connection error: {e}", original_exception=e
+            )

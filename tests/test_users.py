@@ -324,6 +324,69 @@ class TestUsersManager:
         assert excinfo.value.original_exception == original_exception
         assert "Network or connection error" in excinfo.value.message
 
+    @patch("siren.users.requests.delete")
+    def test_delete_user_success(self, mock_delete, users_manager: UsersManager):
+        """Test successful user deletion returns True."""
+        # Mock API response for 204 No Content
+        mock_delete.return_value = mock_response(204)
+
+        response = users_manager.delete_user(MOCK_USER_ID)
+
+        # Expected API request
+        expected_headers = {
+            "Authorization": f"Bearer {MOCK_API_KEY}",
+        }
+        mock_delete.assert_called_once_with(
+            f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
+            headers=expected_headers,
+            timeout=10,
+        )
+
+        # Verify response
+        assert response is True
+
+    @patch("siren.users.requests.delete")
+    def test_delete_user_not_found(self, mock_delete, users_manager: UsersManager):
+        """Test API error (404) raises SirenAPIError."""
+        # Mock API error response
+        mock_api_error_payload = {
+            "error": {
+                "errorCode": "USER_NOT_FOUND",
+                "message": "User with the specified unique ID does not exist.",
+            }
+        }
+        status_code = 404
+
+        err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
+        http_error = requests.exceptions.HTTPError(response=err_response_obj)
+        err_response_obj.raise_for_status.side_effect = http_error
+        mock_delete.return_value = err_response_obj
+
+        with pytest.raises(SirenAPIError) as excinfo:
+            users_manager.delete_user(MOCK_USER_ID)
+
+        # Verify error details
+        assert excinfo.value.status_code == status_code
+        assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
+        assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
+
+    @patch("siren.users.requests.delete")
+    def test_delete_user_request_exception(
+        self, mock_delete, users_manager: UsersManager
+    ):
+        """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
+        # Mock network error
+        original_exception = requests.exceptions.ConnectionError(
+            "Simulated connection failed"
+        )
+        mock_delete.side_effect = original_exception
+
+        with pytest.raises(SirenSDKError) as excinfo:
+            users_manager.delete_user(MOCK_USER_ID)
+
+        assert excinfo.value.original_exception == original_exception
+        assert "Network or connection error" in excinfo.value.message
+
 
 class TestSirenClientUsers:
     """Tests for user management methods exposed on SirenClient."""
@@ -418,3 +481,20 @@ class TestSirenClientUsers:
         assert call_kwargs["email"] == payload["email"]
         assert call_kwargs["attributes"] == payload["attributes"]
         assert response == mock_user_instance
+
+    @patch("siren.client.UsersManager.delete_user")
+    def test_client_delete_user_delegates_to_manager(
+        self, mock_manager_delete_user, siren_client: SirenClient
+    ):
+        """Test that SirenClient.delete_user correctly delegates to UsersManager.delete_user."""
+        # Test data
+        unique_id = "client_user_001"
+
+        # Mock response
+        mock_manager_delete_user.return_value = True
+
+        response = siren_client.delete_user(unique_id)
+
+        # Verify delegation
+        mock_manager_delete_user.assert_called_once_with(unique_id)
+        assert response is True

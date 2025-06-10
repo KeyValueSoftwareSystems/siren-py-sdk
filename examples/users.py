@@ -48,6 +48,17 @@ def update_user_example(client: SirenClient) -> None:
         print(f"SDK Error: {e.message}")
 
 
+def delete_user_example(client: SirenClient) -> None:
+    """Example of deleting a user."""
+    try:
+        deleted = client.delete_user("john_doe_002")
+        print(f"Deleted user: {deleted}")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
 if __name__ == "__main__":
     api_key = os.environ.get("SIREN_API_KEY")
     if not api_key:
@@ -57,4 +68,5 @@ if __name__ == "__main__":
     client = SirenClient(api_key=api_key)
 
     # add_user_example(client)
-    update_user_example(client)
+    # update_user_example(client)
+    delete_user_example(client)
