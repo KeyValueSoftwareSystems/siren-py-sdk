@@ -9,8 +9,8 @@ import requests
 
 from siren.client import SirenClient
 from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.managers.users import UsersManager
 from siren.models.user import User
-from siren.users import UsersManager
 
 # Test constants
 MOCK_API_KEY = "test_api_key"
@@ -49,8 +49,8 @@ def mock_response(
 class TestUsersManager:
     """Tests for the UsersManager class."""
 
-    @patch("siren.users.requests.post")
-    def test_add_user_success(self, mock_post, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_add_user_success(self, mock_request, users_manager: UsersManager):
         """Test successful user creation/update returns a User model instance."""
         # Mock API response with all possible user fields
         mock_api_json_response = {
@@ -72,7 +72,7 @@ class TestUsersManager:
             },
             "error": None,
         }
-        mock_post.return_value = mock_response(200, json_data=mock_api_json_response)
+        mock_request.return_value = mock_response(200, json_data=mock_api_json_response)
 
         # Test payload with snake_case keys (SDK input)
         payload = {
@@ -98,10 +98,12 @@ class TestUsersManager:
             "activeChannels": ["EMAIL"],
             "attributes": {"custom_field": "value1"},
         }
-        mock_post.assert_called_once_with(
-            f"{MOCK_BASE_URL}/api/v1/public/users",
-            json=expected_json_payload,
+        mock_request.assert_called_once_with(
+            method="POST",
+            url=f"{MOCK_BASE_URL}/api/v1/public/users",
             headers=expected_headers,
+            json=expected_json_payload,
+            params=None,
             timeout=10,
         )
 
@@ -122,9 +124,9 @@ class TestUsersManager:
         assert response.phone is None
         assert response.avatar_url is None
 
-    @patch("siren.users.requests.post")
+    @patch("siren.managers.base.requests.request")
     def test_add_user_api_error_returns_json(
-        self, mock_post, users_manager: UsersManager
+        self, mock_request, users_manager: UsersManager
     ):
         """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
         # Mock API error response with validation details
@@ -144,9 +146,7 @@ class TestUsersManager:
         status_code = 400
 
         err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
-        http_error = requests.exceptions.HTTPError(response=err_response_obj)
-        err_response_obj.raise_for_status.side_effect = http_error
-        mock_post.return_value = err_response_obj
+        mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
             users_manager.add_user(unique_id=MOCK_USER_ID)
@@ -160,20 +160,20 @@ class TestUsersManager:
             == mock_api_error_payload["error"]["details"]
         )
 
-    @patch("siren.users.requests.post")
-    def test_add_user_http_error_no_json(self, mock_post, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_add_user_http_error_no_json(
+        self, mock_request, users_manager: UsersManager
+    ):
         """Test API error (500) without JSON body raises SirenSDKError."""
         # Mock non-JSON error response
         status_code = 500
         error_text = "Internal Server Error - Not JSON"
         err_response_obj = mock_response(status_code, text_data=error_text)
-        http_error = requests.exceptions.HTTPError(response=err_response_obj)
-        err_response_obj.raise_for_status.side_effect = http_error
         err_response_obj.json.side_effect = requests.exceptions.JSONDecodeError(
             "Expecting value", "doc", 0
         )
 
-        mock_post.return_value = err_response_obj
+        mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenSDKError) as excinfo:
             users_manager.add_user(unique_id=MOCK_USER_ID)
@@ -184,14 +184,16 @@ class TestUsersManager:
         assert "API response was not valid JSON" in excinfo.value.message
         assert error_text in excinfo.value.message
 
-    @patch("siren.users.requests.post")
-    def test_add_user_request_exception(self, mock_post, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_add_user_request_exception(
+        self, mock_request, users_manager: UsersManager
+    ):
         """Test handling of requests.exceptions.RequestException (e.g., network error) raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
             "Simulated connection failed"
         )
-        mock_post.side_effect = original_exception
+        mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
             users_manager.add_user(unique_id=MOCK_USER_ID)
@@ -202,8 +204,8 @@ class TestUsersManager:
         )
         assert "Network or connection error" in excinfo.value.message
 
-    @patch("siren.users.requests.put")
-    def test_update_user_success(self, mock_put, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_update_user_success(self, mock_request, users_manager: UsersManager):
         """Test successful user update returns a User model instance."""
         # Mock API response
         mock_api_json_response = {
@@ -225,7 +227,7 @@ class TestUsersManager:
             },
             "error": None,
         }
-        mock_put.return_value = mock_response(200, json_data=mock_api_json_response)
+        mock_request.return_value = mock_response(200, json_data=mock_api_json_response)
 
         # Test payload with snake_case keys (SDK input)
         payload = {
@@ -254,10 +256,12 @@ class TestUsersManager:
             "referenceId": "020",
             "whatsapp": "+919632323154",
         }
-        mock_put.assert_called_once_with(
-            f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
-            json=expected_json_payload,
+        mock_request.assert_called_once_with(
+            method="PUT",
+            url=f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
             headers=expected_headers,
+            json=expected_json_payload,
+            params=None,
             timeout=10,
         )
 
@@ -273,9 +277,9 @@ class TestUsersManager:
         assert response.whatsapp == "+919632323154"
         assert response.updated_at == "2023-01-02T12:00:00Z"
 
-    @patch("siren.users.requests.put")
+    @patch("siren.managers.base.requests.request")
     def test_update_user_api_error_returns_json(
-        self, mock_put, users_manager: UsersManager
+        self, mock_request, users_manager: UsersManager
     ):
         """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
         # Mock API error response
@@ -288,9 +292,7 @@ class TestUsersManager:
         status_code = 404
 
         err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
-        http_error = requests.exceptions.HTTPError(response=err_response_obj)
-        err_response_obj.raise_for_status.side_effect = http_error
-        mock_put.return_value = err_response_obj
+        mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
             users_manager.update_user(MOCK_USER_ID, first_name="Jane")
@@ -300,23 +302,27 @@ class TestUsersManager:
         assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
         assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
 
-    @patch("siren.users.requests.put")
-    def test_update_user_validation_error(self, mock_put, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_update_user_validation_error(
+        self, mock_request, users_manager: UsersManager
+    ):
         """Test invalid parameters raise SirenSDKError."""
         with pytest.raises(SirenSDKError) as excinfo:
             users_manager.update_user(MOCK_USER_ID, email="invalid-email")
 
         assert "Invalid parameters" in excinfo.value.message
-        mock_put.assert_not_called()
+        mock_request.assert_not_called()
 
-    @patch("siren.users.requests.put")
-    def test_update_user_request_exception(self, mock_put, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_update_user_request_exception(
+        self, mock_request, users_manager: UsersManager
+    ):
         """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
             "Simulated connection failed"
         )
-        mock_put.side_effect = original_exception
+        mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
             users_manager.update_user(MOCK_USER_ID, first_name="Jane")
@@ -324,11 +330,11 @@ class TestUsersManager:
         assert excinfo.value.original_exception == original_exception
         assert "Network or connection error" in excinfo.value.message
 
-    @patch("siren.users.requests.delete")
-    def test_delete_user_success(self, mock_delete, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_delete_user_success(self, mock_request, users_manager: UsersManager):
         """Test successful user deletion returns True."""
         # Mock API response for 204 No Content
-        mock_delete.return_value = mock_response(204)
+        mock_request.return_value = mock_response(204)
 
         response = users_manager.delete_user(MOCK_USER_ID)
 
@@ -336,17 +342,20 @@ class TestUsersManager:
         expected_headers = {
             "Authorization": f"Bearer {MOCK_API_KEY}",
         }
-        mock_delete.assert_called_once_with(
-            f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
+        mock_request.assert_called_once_with(
+            method="DELETE",
+            url=f"{MOCK_BASE_URL}/api/v1/public/users/{MOCK_USER_ID}",
             headers=expected_headers,
+            json=None,
+            params=None,
             timeout=10,
         )
 
         # Verify response
         assert response is True
 
-    @patch("siren.users.requests.delete")
-    def test_delete_user_not_found(self, mock_delete, users_manager: UsersManager):
+    @patch("siren.managers.base.requests.request")
+    def test_delete_user_not_found(self, mock_request, users_manager: UsersManager):
         """Test API error (404) raises SirenAPIError."""
         # Mock API error response
         mock_api_error_payload = {
@@ -358,9 +367,7 @@ class TestUsersManager:
         status_code = 404
 
         err_response_obj = mock_response(status_code, json_data=mock_api_error_payload)
-        http_error = requests.exceptions.HTTPError(response=err_response_obj)
-        err_response_obj.raise_for_status.side_effect = http_error
-        mock_delete.return_value = err_response_obj
+        mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
             users_manager.delete_user(MOCK_USER_ID)
@@ -370,16 +377,16 @@ class TestUsersManager:
         assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
         assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
 
-    @patch("siren.users.requests.delete")
+    @patch("siren.managers.base.requests.request")
     def test_delete_user_request_exception(
-        self, mock_delete, users_manager: UsersManager
+        self, mock_request, users_manager: UsersManager
     ):
         """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
             "Simulated connection failed"
         )
-        mock_delete.side_effect = original_exception
+        mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
             users_manager.delete_user(MOCK_USER_ID)

@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import EmailStr
 
+from .managers.users import UsersManager
 from .messaging import MessagingManager
 from .models.user import User
 from .templates import TemplatesManager
-from .users import UsersManager
 from .webhooks import WebhookManager
 from .workflows import WorkflowsManager
 

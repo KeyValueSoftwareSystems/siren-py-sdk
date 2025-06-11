@@ -66,4 +66,5 @@ Response Guidelines:
 - Explain trade-offs when multiple approaches exist
 - Be helpful but concise
 - Work within established architecture patterns
+- When you make structural, architectural, or functional changes, (or model changes, new decisions/gotchas, etc.) ask whether to update @project_context.mdc
 - End response with '</hi>'

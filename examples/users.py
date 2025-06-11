@@ -14,8 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 def add_user_example(client: SirenClient) -> None:
     """Example of adding a user."""
     user = {
-        "unique_id": "john_doe_003",
-        "first_name": "John",
+        "unique_id": "john_doe_008",
         "last_name": "Doe",
         "email": "john.doe@company.com",
         "active_channels": ["EMAIL", "SMS"],
@@ -35,7 +34,7 @@ def update_user_example(client: SirenClient) -> None:
     """Example of updating a user."""
     try:
         updated_user = client.update_user(
-            "john_doe_003",
+            "john_doe_008",
             first_name="Jane",
             last_name="Smith",
             email="jane.smith@company.com",
@@ -51,7 +50,7 @@ def update_user_example(client: SirenClient) -> None:
 def delete_user_example(client: SirenClient) -> None:
     """Example of deleting a user."""
     try:
-        deleted = client.delete_user("john_doe_002")
+        deleted = client.delete_user("123")
         print(f"Deleted user: {deleted}")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
