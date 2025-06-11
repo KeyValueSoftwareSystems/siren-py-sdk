@@ -1,0 +1,119 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Context: Siren AI Python SDK
+
+## Project Summary
+
+Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular manager-based architecture.
+
+## Key Features / Functional Modules
+
+- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/templates.py`
+- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/workflows.py`
+- **Users** - Add, update, delete users → `siren/users.py`
+- **Messaging** - Send messages, get replies, track status → `siren/messaging.py`
+- **Webhooks** - Configure notification and inbound webhooks → `siren/webhooks.py`
+- **Client** - Unified API entry point → `siren/client.py`
+
+## Codebase Structure Overview
+
+```
+siren-ai/
+├── siren/                    # Main SDK package
+│   ├── client.py            # Main SirenClient - unified API entry point
+│   ├── templates.py         # TemplatesManager - template operations
+│   ├── workflows.py         # WorkflowsManager - workflow operations
+│   ├── users.py             # UsersManager - user management
+│   ├── messaging.py         # MessagingManager - message operations
+│   ├── webhooks.py          # WebhookManager - webhook configuration
+│   ├── exceptions.py        # Custom exception classes (SirenAPIError, SirenSDKError)
+│   ├── utils.py             # Shared utility functions
+│   └── models/              # Pydantic data models
+│       ├── base.py          # Base response models and error handling
+│       └── user.py          # User-specific models
+├── tests/                   # Comprehensive test suite with ~95% coverage
+├── examples/                # Usage examples for each module
+├── pyproject.toml          # Project configuration, dependencies, tools
+└── README.md               # Installation, usage, and API documentation
+```
+
+## Architecture & Data Flow
+
+**Layered Architecture**:
+- **Client** (`SirenClient`) - Thin facade delegating to managers
+- **Managers** (`TemplatesManager`, `UsersManager`, etc.) - Domain-specific API handlers, one per resource type
+- **Models** (Pydantic) - Request/response validation, field aliasing (snake_case ↔ camelCase)
+- **Exceptions** - `SirenAPIError` (API errors: 400/401/404) vs `SirenSDKError` (SDK issues: network/validation)
+
+**Request Flow**: Client → Manager → HTTP Request → API → Response → Model → Client
+- Managers prepare requests with Pydantic validation → HTTP to Siren API → Responses parsed through models → Errors become structured exceptions
+
+**Implementation Details**:
+- **HTTP Client**: `requests` library with 10s timeout (hardcoded, TODO: make configurable)
+- **Authentication**: Bearer token in `Authorization` header
+- **Status Handling**: Explicit `if status_code == 200` checks instead of `response.ok`
+- **API Versioning**: Templates/Users/Messaging/Webhooks use `/api/v1/public/`, Workflows use `/api/v2/`
+**Base URL**: `https://api.dev.trysiren.io` (TODO: auto-select based on API key type)
+
+## Tech Stack
+
+**Core**: Python 3.8+, `requests`, `pydantic[email]`
+**Dev Tools**: `pytest` + mocking, `ruff`, `pyright`, `pre-commit`, `uv`
+
+## Dev & Build Commands
+
+```bash
+# Setup development environment
+uv venv && source .venv/bin/activate
+uv pip install -e ".[dev]"
+
+# Code quality
+uv run ruff check .                 # Lint code
+uv run ruff format .               # Format code
+uv run pyright                     # Type checking
+uv run pre-commit run --all-files  # Run all pre-commit hooks
+
+# Testing
+uv run pytest                      # Run all tests
+uv run pytest --cov=siren         # Run tests with coverage
+uv run pytest tests/test_templates.py -v  # Run specific test module
+
+# Build and publish
+python -m build            # Build wheel and sdist
+twine upload dist/*        # Upload to PyPI
+```
+
+
+
+## Testing
+
+**Strategy**: `requests-mock` with realistic API data
+**Organization**: One test file per manager, shared `client` fixture
+
+## Key Files
+
+- **`siren/client.py`** - Main client interface
+- **`siren/templates.py`** - Most complex manager, full patterns
+- **`siren/models/base.py`** - Core models and error handling
+- **`siren/exceptions.py`** - Exception patterns
+
+## Gotchas
+
+**Mixed Return Types**: Templates/Workflows/Messaging return `Dict[str, Any]`, Users return `User` models
+**Field Serialization**: Always use `by_alias=True` when calling `model_dump()`
+
+## TODO / Future Areas
+
+**Configuration Improvements**:
+- Auto-select API URL based on API key type (dev/prod) or environment variable
+
+**Architecture Enhancements**:
+- Consider standardizing return types across all managers (currently mixed Dict vs Models)
+- Add retry logic for transient network failures
+- Add request/response logging capabilities
+
+**Testing Gaps**:
+- Integration tests against live API (currently only unit tests with mocks)

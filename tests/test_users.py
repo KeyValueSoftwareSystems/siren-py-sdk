@@ -421,6 +421,13 @@ class TestSirenClientUsers:
             active=None,
             phone=None,
             avatarUrl=None,
+            pushToken=None,
+            inApp=None,
+            slack=None,
+            discord=None,
+            teams=None,
+            line=None,
+            customData=None,
         )
         mock_manager_add_user.return_value = mock_user_instance
 
@@ -448,6 +455,13 @@ class TestSirenClientUsers:
             "last_name": "User",
             "email": "updated.user@example.com",
             "attributes": {"source": "update_test"},
+            "push_token": "push_token_123",
+            "in_app": True,
+            "slack": "slack_user_id_123",
+            "discord": "discord_user_id_123",
+            "teams": "teams_user_id_123",
+            "line": "line_user_id_123",
+            "custom_data": {"custom_field": "custom_value"},
         }
 
         # Mock response
@@ -466,6 +480,13 @@ class TestSirenClientUsers:
             active=None,
             phone=None,
             avatarUrl=None,
+            pushToken="push_token_123",
+            inApp=True,
+            slack="slack_user_id_123",
+            discord="discord_user_id_123",
+            teams="teams_user_id_123",
+            line="line_user_id_123",
+            customData={"custom_field": "custom_value"},
         )
         mock_manager_update_user.return_value = mock_user_instance
 

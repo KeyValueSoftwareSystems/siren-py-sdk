@@ -72,7 +72,7 @@ def get_replies_example(client: SirenClient, message_id: str):
                 print(f"Found {len(replies)} replies:")
                 for i, reply in enumerate(replies):
                     print(
-                        f"  Reply {i+1}: {reply.get('text', 'N/A')} (User: {reply.get('user', 'N/A')}, Timestamp: {reply.get('ts', 'N/A')})"
+                        f"  Reply {i + 1}: {reply.get('text', 'N/A')} (User: {reply.get('user', 'N/A')}, Timestamp: {reply.get('ts', 'N/A')})"
                     )
             elif isinstance(replies, list) and not replies:
                 print("No replies found for this message.")
