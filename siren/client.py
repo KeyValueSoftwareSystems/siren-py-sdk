@@ -8,11 +8,16 @@ from .managers.messaging import MessagingManager
 from .managers.templates import TemplatesManager
 from .managers.users import UsersManager
 from .managers.webhooks import WebhooksManager
+from .managers.workflows import WorkflowsManager
 from .models.messaging import ReplyData
 from .models.templates import ChannelTemplate, CreatedTemplate, Template
 from .models.user import User
 from .models.webhooks import WebhookConfig
-from .workflows import WorkflowsManager
+from .models.workflows import (
+    BulkWorkflowExecutionData,
+    ScheduleData,
+    WorkflowExecutionData,
+)
 
 
 class SirenClient:
@@ -32,8 +37,7 @@ class SirenClient:
             api_key=self.api_key, base_url=self.BASE_API_URL
         )
         self._workflows = WorkflowsManager(
-            api_key=self.api_key,
-            base_url=self.BASE_API_URL,  # Note: WorkflowsManager uses /api/v2 internally
+            api_key=self.api_key, base_url=self.BASE_API_URL
         )
         self._webhooks = WebhooksManager(
             api_key=self.api_key, base_url=self.BASE_API_URL
@@ -170,7 +174,7 @@ class SirenClient:
         workflow_name: str,
         data: Optional[Dict[str, Any]] = None,
         notify: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> WorkflowExecutionData:
         """Triggers a workflow with the given name and payload.
 
         Args:
@@ -179,7 +183,7 @@ class SirenClient:
             notify: Specific data for this workflow execution.
 
         Returns:
-            A dictionary containing the API response.
+            WorkflowExecutionData: Workflow execution details.
         """
         return self._workflows.trigger_workflow(
             workflow_name=workflow_name, data=data, notify=notify
@@ -190,7 +194,7 @@ class SirenClient:
         workflow_name: str,
         notify: List[Dict[str, Any]],
         data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> BulkWorkflowExecutionData:
         """Triggers a workflow in bulk for multiple recipients/notifications.
 
         Args:
@@ -200,7 +204,7 @@ class SirenClient:
             data: Common data that will be used across all workflow executions.
 
         Returns:
-            A dictionary containing the API response.
+            BulkWorkflowExecutionData: Bulk workflow execution details.
         """
         return self._workflows.trigger_bulk_workflow(
             workflow_name=workflow_name, notify=notify, data=data
@@ -216,9 +220,8 @@ class SirenClient:
         workflow_id: str,
         input_data: Dict[str, Any],
         end_date: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Schedules a workflow execution.
+    ) -> ScheduleData:
+        """Schedules a workflow execution.
 
         Args:
             name: Name of the schedule.
@@ -229,6 +232,9 @@ class SirenClient:
             workflow_id: ID of the workflow to schedule.
             input_data: Input data for the workflow.
             end_date: Optional end date for the schedule in "YYYY-MM-DD" format.
+
+        Returns:
+            ScheduleData: Schedule details.
         """
         return self._workflows.schedule_workflow(
             name=name,

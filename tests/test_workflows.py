@@ -1,22 +1,27 @@
 # tests/test_workflows.py
-"""Tests for Siren SDK Workflow operations."""
+"""Test cases for workflows client."""
 
 import pytest
 import requests
 from requests_mock import Mocker as RequestsMocker
 
-from siren import SirenClient
+from siren.client import SirenClient
+from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.models.workflows import (
+    BulkWorkflowExecutionData,
+    ScheduleData,
+    WorkflowExecutionData,
+)
 
-# Constants for testing
-API_KEY = "test_api_key_workflow"  # Use a distinct key for clarity if needed
+API_KEY = "test_api_key_workflows"
+MOCK_V2_BASE = "https://api.dev.trysiren.io/api/v2"
+MOCK_V1_PUBLIC_BASE = "https://api.dev.trysiren.io/api/v1/public"
 WORKFLOW_NAME = "test_otp_workflow"
-# Access BASE_API_URL as a class attribute of SirenClient
-MOCK_V2_BASE = f"{SirenClient.BASE_API_URL}/api/v2"  # Construct the v2 base for mocking
 
 
 @pytest.fixture
 def client() -> SirenClient:
-    """Provides a SirenClient instance for testing."""
+    """Create a SirenClient instance for testing."""
     return SirenClient(api_key=API_KEY)
 
 
@@ -43,7 +48,11 @@ def test_trigger_workflow_success_with_all_params(
         workflow_name=WORKFLOW_NAME, data=request_data, notify=request_notify
     )
 
-    assert response == expected_response
+    # Expect parsed model object
+    assert isinstance(response, WorkflowExecutionData)
+    assert response.request_id == "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+    assert response.workflow_execution_id == "b2c3d4e5-f6a7-8901-2345-67890abcdef0"
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].method == "POST"
@@ -71,15 +80,16 @@ def test_trigger_workflow_success_minimal_params(
 
     response = client.trigger_workflow(workflow_name=WORKFLOW_NAME)
 
-    assert response == expected_response
+    # Expect parsed model object
+    assert isinstance(response, WorkflowExecutionData)
+    assert response.request_id == "uuid1"
+    assert response.workflow_execution_id == "uuid2"
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].json() == {
         "workflowName": WORKFLOW_NAME
     }  # data and notify are optional
-
-
-# Error handling tests (similar to test_templates.py)
 
 
 def test_trigger_workflow_http_400_error(
@@ -95,8 +105,11 @@ def test_trigger_workflow_http_400_error(
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger"
     requests_mock.post(mock_url, json=error_response, status_code=400)
 
-    response = client.trigger_workflow(workflow_name=WORKFLOW_NAME)
-    assert response == error_response
+    with pytest.raises(SirenAPIError) as exc_info:
+        client.trigger_workflow(workflow_name=WORKFLOW_NAME)
+
+    assert exc_info.value.status_code == 400
+    assert "BAD_REQUEST" in str(exc_info.value)
 
 
 def test_trigger_workflow_http_401_error(
@@ -107,8 +120,10 @@ def test_trigger_workflow_http_401_error(
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger"
     requests_mock.post(mock_url, json=error_response, status_code=401)
 
-    response = client.trigger_workflow(workflow_name=WORKFLOW_NAME)
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.trigger_workflow(workflow_name=WORKFLOW_NAME)
+
+    assert exc_info.value.status_code == 401
 
 
 def test_trigger_workflow_http_404_error(
@@ -119,8 +134,10 @@ def test_trigger_workflow_http_404_error(
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger"
     requests_mock.post(mock_url, json=error_response, status_code=404)
 
-    response = client.trigger_workflow(workflow_name="non_existent_workflow")
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.trigger_workflow(workflow_name="non_existent_workflow")
+
+    assert exc_info.value.status_code == 404
 
 
 def test_trigger_workflow_network_error(
@@ -132,10 +149,10 @@ def test_trigger_workflow_network_error(
         mock_url, exc=requests.exceptions.ConnectionError("Connection failed")
     )
 
-    with pytest.raises(
-        requests.exceptions.RequestException
-    ):  # More general than ConnectionError
+    with pytest.raises(SirenSDKError) as exc_info:
         client.trigger_workflow(workflow_name=WORKFLOW_NAME)
+
+    assert "Network or connection error" in str(exc_info.value)
 
 
 def test_trigger_workflow_http_error_non_json_response(
@@ -146,13 +163,11 @@ def test_trigger_workflow_http_error_non_json_response(
     non_json_error_text = "Service Unavailable"
     requests_mock.post(mock_url, text=non_json_error_text, status_code=503)
 
-    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+    with pytest.raises(SirenSDKError) as exc_info:
         client.trigger_workflow(workflow_name=WORKFLOW_NAME)
 
-    # Check if the original error text is part of the raised exception's message
-    assert non_json_error_text in str(excinfo.value)
-    assert excinfo.value.response is not None
-    assert excinfo.value.response.status_code == 503
+    assert "API response was not valid JSON" in str(exc_info.value)
+    assert exc_info.value.status_code == 503
 
 
 # --- Tests for trigger_bulk_workflow --- #
@@ -191,7 +206,14 @@ def test_trigger_bulk_workflow_success_with_all_params(
         data=request_data,
     )
 
-    assert response == expected_response
+    # Expect parsed model object
+    assert isinstance(response, BulkWorkflowExecutionData)
+    assert response.request_id == "d4e5f6a7-b8c9-d0e1-f2a3-b4c5d6e7f8a9"
+    assert response.workflow_execution_ids == [
+        "e5f6a7b8-c9d0-e1f2-a3b4-c5d6e7f8a9b0",
+        "f6a7b8c9-d0e1-f2a3-b4c5-d6e7f8a9b0c1",
+    ]
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].method == "POST"
@@ -227,13 +249,17 @@ def test_trigger_bulk_workflow_success_minimal_params(
         workflow_name=BULK_WORKFLOW_NAME, notify=request_notify_list
     )
 
-    assert response == expected_response
+    # Expect parsed model object
+    assert isinstance(response, BulkWorkflowExecutionData)
+    assert response.request_id == "uuid_bulk_req"
+    assert response.workflow_execution_ids == ["uuid_bulk_exec1"]
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].json() == {
         "workflowName": BULK_WORKFLOW_NAME,
         "notify": request_notify_list,
-    }
+    }  # data is optional
 
 
 def test_trigger_bulk_workflow_http_400_error(
@@ -242,18 +268,28 @@ def test_trigger_bulk_workflow_http_400_error(
     """Test trigger_bulk_workflow handles HTTP 400 Bad Request error."""
     error_response = {
         "data": None,
-        "error": {"errorCode": "BAD_REQUEST", "message": "Invalid notify payload"},
-        "errors": [{"errorCode": "BAD_REQUEST", "message": "Invalid notify payload"}],
+        "error": {
+            "errorCode": "INVALID_NOTIFICATION_LIST",
+            "message": "Invalid notification list",
+        },
+        "errors": [
+            {
+                "errorCode": "INVALID_NOTIFICATION_LIST",
+                "message": "Invalid notification list",
+            }
+        ],
         "meta": None,
     }
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
     requests_mock.post(mock_url, json=error_response, status_code=400)
 
-    response = client.trigger_bulk_workflow(
-        workflow_name=BULK_WORKFLOW_NAME,
-        notify=[{}],  # Example invalid notify
-    )
-    assert response == error_response
+    with pytest.raises(SirenAPIError) as exc_info:
+        client.trigger_bulk_workflow(
+            workflow_name=BULK_WORKFLOW_NAME, notify=[{"invalid": "data"}]
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "INVALID_NOTIFICATION_LIST" in str(exc_info.value)
 
 
 def test_trigger_bulk_workflow_http_401_error(
@@ -264,25 +300,30 @@ def test_trigger_bulk_workflow_http_401_error(
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
     requests_mock.post(mock_url, json=error_response, status_code=401)
 
-    response = client.trigger_bulk_workflow(
-        workflow_name=BULK_WORKFLOW_NAME, notify=[{"recipient": "test@example.com"}]
-    )
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.trigger_bulk_workflow(
+            workflow_name=BULK_WORKFLOW_NAME,
+            notify=[{"notificationType": "email", "recipient": "test@test.com"}],
+        )
+
+    assert exc_info.value.status_code == 401
 
 
 def test_trigger_bulk_workflow_http_404_error(
     client: SirenClient, requests_mock: RequestsMocker
 ):
-    """Test trigger_bulk_workflow handles HTTP 404 Not Found error for the workflow."""
+    """Test trigger_bulk_workflow handles HTTP 404 Not Found error."""
     error_response = {"detail": "Workflow not found."}
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
     requests_mock.post(mock_url, json=error_response, status_code=404)
 
-    response = client.trigger_bulk_workflow(
-        workflow_name="non_existent_bulk_workflow",
-        notify=[{"recipient": "test@example.com"}],
-    )
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.trigger_bulk_workflow(
+            workflow_name="non_existent_bulk_workflow",
+            notify=[{"notificationType": "email", "recipient": "test@test.com"}],
+        )
+
+    assert exc_info.value.status_code == 404
 
 
 def test_trigger_bulk_workflow_network_error(
@@ -294,11 +335,13 @@ def test_trigger_bulk_workflow_network_error(
         mock_url, exc=requests.exceptions.ConnectionError("Bulk connection failed")
     )
 
-    with pytest.raises(requests.exceptions.RequestException):
+    with pytest.raises(SirenSDKError) as exc_info:
         client.trigger_bulk_workflow(
             workflow_name=BULK_WORKFLOW_NAME,
-            notify=[{"recipient": "test@example.com"}],
+            notify=[{"notificationType": "email", "recipient": "test@test.com"}],
         )
+
+    assert "Network or connection error" in str(exc_info.value)
 
 
 def test_trigger_bulk_workflow_http_error_non_json_response(
@@ -306,33 +349,30 @@ def test_trigger_bulk_workflow_http_error_non_json_response(
 ):
     """Test trigger_bulk_workflow handles HTTP error with non-JSON response."""
     mock_url = f"{MOCK_V2_BASE}/workflows/trigger/bulk"
-    non_json_error_text = "Bulk Service Unavailable"
+    non_json_error_text = "Service Unavailable"
     requests_mock.post(mock_url, text=non_json_error_text, status_code=503)
 
-    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+    with pytest.raises(SirenSDKError) as exc_info:
         client.trigger_bulk_workflow(
             workflow_name=BULK_WORKFLOW_NAME,
-            notify=[{"recipient": "test@example.com"}],
+            notify=[{"notificationType": "email", "recipient": "test@test.com"}],
         )
 
-    assert non_json_error_text in str(excinfo.value)
-    assert excinfo.value.response is not None
-    assert excinfo.value.response.status_code == 503
+    assert "API response was not valid JSON" in str(exc_info.value)
+    assert exc_info.value.status_code == 503
 
 
 # --- Tests for schedule_workflow --- #
 
 SCHEDULE_NAME = "Test Schedule"
 SCHEDULE_TIME = "10:00:00"
-TIMEZONE_ID = "America/New_York"
-START_DATE = "2025-12-01"
-END_DATE_SPECIFIED = "2025-12-31"
-WORKFLOW_TYPE_ONCE = "ONCE"
+TIMEZONE_ID = "Asia/Kolkata"
+START_DATE = "2024-01-15"
+END_DATE_SPECIFIED = "2024-01-31"
 WORKFLOW_TYPE_DAILY = "DAILY"
-SCHEDULE_WORKFLOW_ID = "wf_schedule_abc123"
+WORKFLOW_TYPE_ONCE = "ONCE"
+SCHEDULE_WORKFLOW_ID = "wf_abc123def456"
 INPUT_DATA = {"param1": "value1", "param2": 123}
-
-MOCK_V1_PUBLIC_BASE = f"{SirenClient.BASE_API_URL}/api/v1/public"
 
 
 def test_schedule_workflow_success_all_params(
@@ -370,7 +410,19 @@ def test_schedule_workflow_success_all_params(
         end_date=END_DATE_SPECIFIED,
     )
 
-    assert response == expected_api_response
+    # Expect parsed model object
+    assert isinstance(response, ScheduleData)
+    assert response.id == "sch_12345"
+    assert response.name == SCHEDULE_NAME
+    assert response.schedule_type == WORKFLOW_TYPE_DAILY
+    assert response.start_date == START_DATE
+    assert response.end_date == END_DATE_SPECIFIED
+    assert response.schedule_time == SCHEDULE_TIME
+    assert response.timezone_id == TIMEZONE_ID
+    assert response.workflow_id == SCHEDULE_WORKFLOW_ID
+    assert response.input_data == INPUT_DATA
+    assert response.status == "ACTIVE"
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].method == "POST"
@@ -423,7 +475,19 @@ def test_schedule_workflow_success_once_no_end_date(
         end_date=None,  # Explicitly None
     )
 
-    assert response == expected_api_response
+    # Expect parsed model object
+    assert isinstance(response, ScheduleData)
+    assert response.id == "sch_67890"
+    assert response.name == SCHEDULE_NAME
+    assert response.schedule_type == WORKFLOW_TYPE_ONCE
+    assert response.start_date == START_DATE
+    assert response.end_date == START_DATE
+    assert response.schedule_time == SCHEDULE_TIME
+    assert response.timezone_id == TIMEZONE_ID
+    assert response.workflow_id == SCHEDULE_WORKFLOW_ID
+    assert response.input_data == INPUT_DATA
+    assert response.status == "ACTIVE"
+
     history = requests_mock.request_history
     assert len(history) == 1
     assert history[0].json() == {
@@ -451,16 +515,18 @@ def test_schedule_workflow_http_400_error(
     mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
     requests_mock.post(mock_url, json=error_response, status_code=400)
 
-    response = client.schedule_workflow(
-        name=SCHEDULE_NAME,
-        schedule_time="invalid-time",  # Intentionally invalid
-        timezone_id=TIMEZONE_ID,
-        start_date=START_DATE,
-        workflow_type=WORKFLOW_TYPE_ONCE,
-        workflow_id=SCHEDULE_WORKFLOW_ID,
-        input_data=INPUT_DATA,
-    )
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.schedule_workflow(
+            name=SCHEDULE_NAME,
+            schedule_time="invalid-time",  # Intentionally invalid
+            timezone_id=TIMEZONE_ID,
+            start_date=START_DATE,
+            workflow_type=WORKFLOW_TYPE_ONCE,
+            workflow_id=SCHEDULE_WORKFLOW_ID,
+            input_data=INPUT_DATA,
+        )
+
+    assert exc_info.value.status_code == 400
 
 
 def test_schedule_workflow_http_401_error(
@@ -471,16 +537,18 @@ def test_schedule_workflow_http_401_error(
     mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
     requests_mock.post(mock_url, json=error_response, status_code=401)
 
-    response = client.schedule_workflow(
-        name=SCHEDULE_NAME,
-        schedule_time=SCHEDULE_TIME,
-        timezone_id=TIMEZONE_ID,
-        start_date=START_DATE,
-        workflow_type=WORKFLOW_TYPE_ONCE,
-        workflow_id=SCHEDULE_WORKFLOW_ID,
-        input_data=INPUT_DATA,
-    )
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.schedule_workflow(
+            name=SCHEDULE_NAME,
+            schedule_time=SCHEDULE_TIME,
+            timezone_id=TIMEZONE_ID,
+            start_date=START_DATE,
+            workflow_type=WORKFLOW_TYPE_ONCE,
+            workflow_id=SCHEDULE_WORKFLOW_ID,
+            input_data=INPUT_DATA,
+        )
+
+    assert exc_info.value.status_code == 401
 
 
 def test_schedule_workflow_http_404_error(
@@ -491,16 +559,18 @@ def test_schedule_workflow_http_404_error(
     mock_url = f"{MOCK_V1_PUBLIC_BASE}/schedules"
     requests_mock.post(mock_url, json=error_response, status_code=404)
 
-    response = client.schedule_workflow(
-        name=SCHEDULE_NAME,
-        schedule_time=SCHEDULE_TIME,
-        timezone_id=TIMEZONE_ID,
-        start_date=START_DATE,
-        workflow_type=WORKFLOW_TYPE_ONCE,
-        workflow_id="wf_non_existent_xyz789",
-        input_data=INPUT_DATA,
-    )
-    assert response == error_response
+    with pytest.raises(SirenSDKError) as exc_info:
+        client.schedule_workflow(
+            name=SCHEDULE_NAME,
+            schedule_time=SCHEDULE_TIME,
+            timezone_id=TIMEZONE_ID,
+            start_date=START_DATE,
+            workflow_type=WORKFLOW_TYPE_ONCE,
+            workflow_id="wf_non_existent_xyz789",
+            input_data=INPUT_DATA,
+        )
+
+    assert exc_info.value.status_code == 404
 
 
 def test_schedule_workflow_network_error(
@@ -512,7 +582,7 @@ def test_schedule_workflow_network_error(
         mock_url, exc=requests.exceptions.ConnectionError("Connection failed")
     )
 
-    with pytest.raises(requests.exceptions.RequestException):
+    with pytest.raises(SirenSDKError) as exc_info:
         client.schedule_workflow(
             name=SCHEDULE_NAME,
             schedule_time=SCHEDULE_TIME,
@@ -522,6 +592,8 @@ def test_schedule_workflow_network_error(
             workflow_id=SCHEDULE_WORKFLOW_ID,
             input_data=INPUT_DATA,
         )
+
+    assert "Network or connection error" in str(exc_info.value)
 
 
 def test_schedule_workflow_http_error_non_json_response(
@@ -532,7 +604,7 @@ def test_schedule_workflow_http_error_non_json_response(
     non_json_error_text = "Gateway Timeout"
     requests_mock.post(mock_url, text=non_json_error_text, status_code=504)
 
-    with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+    with pytest.raises(SirenSDKError) as exc_info:
         client.schedule_workflow(
             name=SCHEDULE_NAME,
             schedule_time=SCHEDULE_TIME,
@@ -543,6 +615,5 @@ def test_schedule_workflow_http_error_non_json_response(
             input_data=INPUT_DATA,
         )
 
-    assert non_json_error_text in str(excinfo.value)
-    assert excinfo.value.response is not None
-    assert excinfo.value.response.status_code == 504
+    assert "API response was not valid JSON" in str(exc_info.value)
+    assert exc_info.value.status_code == 504

@@ -18,7 +18,6 @@ Code Quality:
 - Use consistent type hints
 
 Organization:
-- Group by functionality, not by type
 - Use logical file structure matching domain
 - Keep files focused on single concerns
 - Follow consistent naming conventions
