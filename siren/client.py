@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import EmailStr
 
+from .managers.messaging import MessagingManager
 from .managers.users import UsersManager
-from .messaging import MessagingManager
+from .models.messaging import ReplyData
 from .models.user import User
 from .templates import TemplatesManager
 from .webhooks import WebhookManager
@@ -368,7 +369,7 @@ class SirenClient:
         recipient_type: str,
         recipient_value: str,
         template_variables: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    ) -> str:
         """Send a message using a specific template.
 
         Args:
@@ -379,7 +380,7 @@ class SirenClient:
             template_variables: A dictionary of variables to populate the template.
 
         Returns:
-            A dictionary containing the API response.
+            The message ID of the sent message.
         """
         return self._messaging.send_message(
             template_name=template_name,
@@ -389,27 +390,25 @@ class SirenClient:
             template_variables=template_variables,
         )
 
-    def get_replies(self, message_id: str) -> Dict[str, Any]:
-        """
-        Retrieve replies for a specific message ID.
+    def get_replies(self, message_id: str) -> List[ReplyData]:
+        """Retrieve replies for a specific message.
 
         Args:
             message_id: The ID of the message for which to retrieve replies.
 
         Returns:
-            A dictionary containing the API response with replies.
+            A list of reply objects containing message details.
         """
         return self._messaging.get_replies(message_id=message_id)
 
-    def get_message_status(self, message_id: str) -> Dict[str, Any]:
-        """
-        Retrieve the status of a specific message.
+    def get_message_status(self, message_id: str) -> str:
+        """Retrieve the status of a specific message.
 
         Args:
             message_id: The ID of the message for which to retrieve the status.
 
         Returns:
-            A dictionary containing the API response with the message status.
+            The status of the message (e.g., "DELIVERED", "PENDING").
         """
         return self._messaging.get_message_status(message_id=message_id)
 

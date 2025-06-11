@@ -11,7 +11,7 @@ from siren.exceptions import SirenAPIError, SirenSDKError
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-def add_user_example(client: SirenClient) -> None:
+def add_user_example(client: SirenClient) -> str:
     """Example of adding a user."""
     user = {
         "unique_id": "john_doe_008",
@@ -24,17 +24,18 @@ def add_user_example(client: SirenClient) -> None:
     try:
         created_user = client.add_user(**user)
         print(f"Created user: {created_user.id}")
+        return created_user.unique_id
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
     except SirenSDKError as e:
         print(f"SDK Error: {e.message}")
 
 
-def update_user_example(client: SirenClient) -> None:
+def update_user_example(client: SirenClient, unique_id: str) -> None:
     """Example of updating a user."""
     try:
         updated_user = client.update_user(
-            "john_doe_008",
+            unique_id,
             first_name="Jane",
             last_name="Smith",
             email="jane.smith@company.com",
@@ -47,10 +48,10 @@ def update_user_example(client: SirenClient) -> None:
         print(f"SDK Error: {e.message}")
 
 
-def delete_user_example(client: SirenClient) -> None:
+def delete_user_example(client: SirenClient, unique_id: str) -> None:
     """Example of deleting a user."""
     try:
-        deleted = client.delete_user("123")
+        deleted = client.delete_user(unique_id)
         print(f"Deleted user: {deleted}")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
@@ -66,6 +67,8 @@ if __name__ == "__main__":
 
     client = SirenClient(api_key=api_key)
 
-    # add_user_example(client)
-    # update_user_example(client)
-    delete_user_example(client)
+    unique_id = add_user_example(client)
+    if unique_id:
+        update_user_example(client, unique_id)
+        # Uncomment to delete the user after testing
+        delete_user_example(client, unique_id)
