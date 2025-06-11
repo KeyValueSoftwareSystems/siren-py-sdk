@@ -109,7 +109,10 @@ class BaseManager:
                 if response_model:
                     response_json = self._parse_json_response(response)
                     parsed_response = response_model.model_validate(response_json)
-                    if hasattr(parsed_response, "data") and parsed_response.data:
+                    if (
+                        hasattr(parsed_response, "data")
+                        and parsed_response.data is not None
+                    ):
                         return parsed_response.data
 
             # Handle error cases

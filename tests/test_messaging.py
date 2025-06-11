@@ -1,343 +1,194 @@
-"""Unit tests for the messaging module of the Siren SDK."""
+"""Unit tests for the updated messaging manager using BaseManager."""
+
+from unittest.mock import Mock, patch
 
 import pytest
-import requests
-from requests_mock import Mocker as RequestsMocker
 
-from siren.client import SirenClient
-from siren.messaging import MessagingManager
+from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.managers.messaging import MessagingManager
 
 API_KEY = "test_api_key"
 BASE_URL = "https://api.dev.trysiren.io"
 
 
 class TestMessagingManager:
-    """Tests for the MessagingManager class."""
+    """Tests for MessagingManager with BaseManager."""
 
-    def test_get_message_status_success(self, requests_mock: RequestsMocker):
-        """Test successful retrieval of message status."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_status_123"
-        expected_status = {"status": "DELIVERED"}
-        mock_response_data = {"data": expected_status, "error": None}
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
 
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
-            json=mock_response_data,
-            status_code=200,
-        )
-        response = manager.get_message_status(message_id=message_id)
-        assert response == mock_response_data
-        assert response["data"] == expected_status
-
-    def test_get_message_status_http_error_json_response(
-        self, requests_mock: RequestsMocker
-    ):
-        """Test HTTP error with JSON response during get_message_status."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_status_error_json"
-        error_response = {"error": "Not Found", "message": "Message ID does not exist."}
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
-            json=error_response,
-            status_code=404,
-        )
-        response = manager.get_message_status(message_id=message_id)
-        assert response == error_response
-
-    def test_get_message_status_http_error_no_json_response(
-        self, requests_mock: RequestsMocker
-    ):
-        """Test HTTP error without JSON response during get_message_status."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_status_error_no_json"
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
-            text="Server Error",
-            status_code=500,
-        )
-        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
-            manager.get_message_status(message_id=message_id)
-        assert excinfo.value.response.status_code == 500
-        assert excinfo.value.response.text == "Server Error"
-
-    def test_get_message_status_request_exception(self, requests_mock: RequestsMocker):
-        """Test requests.exceptions.RequestException during get_message_status."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_status_req_exception"
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/message-status/{message_id}",
-            exc=requests.exceptions.Timeout("Connection timed out"),
-        )
-        with pytest.raises(requests.exceptions.RequestException):
-            manager.get_message_status(message_id=message_id)
-
-    """Tests for the MessagingManager class."""
-
-    def test_send_message_success(self, requests_mock: RequestsMocker):
-        """Test successful message sending."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        template_name = "test_template"
-        channel = "SLACK"
-        recipient_type = "direct"
-        recipient_value = "U123ABC"
-        template_variables = {"name": "John Doe"}
-
-        expected_payload = {
-            "template": {"name": template_name},
-            "recipient": {"type": recipient_type, "value": recipient_value},
-            "channel": channel,
-            "templateVariables": template_variables,
+    @patch("siren.managers.base.requests.request")
+    def test_send_message_success(self, mock_request):
+        """Test successful message sending with new BaseManager."""
+        # Mock successful API response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": {"notificationId": "test_msg_123"},
+            "error": None,
         }
-        mock_response_data = {"data": {"notificationId": "notif_123"}, "error": None}
+        mock_request.return_value = mock_response
 
-        requests_mock.post(
-            f"{BASE_URL}/api/v1/public/send-messages",
-            json=mock_response_data,
-            status_code=200,
-        )
-
-        response = manager.send_message(
-            template_name=template_name,
-            channel=channel,
-            recipient_type=recipient_type,
-            recipient_value=recipient_value,
-            template_variables=template_variables,
-        )
-
-        assert response == mock_response_data
-        assert requests_mock.called_once
-        last_request = requests_mock.last_request
-        assert last_request is not None
-        assert last_request.json() == expected_payload
-        assert last_request.headers["Authorization"] == f"Bearer {API_KEY}"
-        assert last_request.headers["Content-Type"] == "application/json"
-        assert last_request.headers["Accept"] == "application/json"
-
-    def test_send_message_success_no_variables(self, requests_mock: RequestsMocker):
-        """Test successful message sending without template variables."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        template_name = "test_template_no_vars"
-        channel = "EMAIL"
-        recipient_type = "direct"
-        recipient_value = "test@example.com"
-
-        expected_payload = {
-            "template": {"name": template_name},
-            "recipient": {"type": recipient_type, "value": recipient_value},
-            "channel": channel,
-        }
-        mock_response_data = {"data": {"notificationId": "notif_456"}, "error": None}
-
-        requests_mock.post(
-            f"{BASE_URL}/api/v1/public/send-messages",
-            json=mock_response_data,
-            status_code=200,
-        )
-
-        response = manager.send_message(
-            template_name=template_name,
-            channel=channel,
-            recipient_type=recipient_type,
-            recipient_value=recipient_value,
-        )
-
-        assert response == mock_response_data
-        assert requests_mock.called_once
-        last_request = requests_mock.last_request
-        assert last_request is not None
-        assert last_request.json() == expected_payload
-
-    def test_send_message_http_error_with_json_response(
-        self, requests_mock: RequestsMocker
-    ):
-        """Test HTTP error with JSON response during message sending."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        error_response = {"error": "Bad Request", "message": "Invalid template name"}
-        requests_mock.post(
-            f"{BASE_URL}/api/v1/public/send-messages",
-            json=error_response,
-            status_code=400,
-        )
-
-        response = manager.send_message(
-            template_name="invalid_template",
+        # Call the method
+        result = self.manager.send_message(
+            template_name="test_template",
             channel="SLACK",
             recipient_type="direct",
-            recipient_value="U123",
-        )
-        assert response == error_response
-
-    def test_send_message_http_error_no_json_response(
-        self, requests_mock: RequestsMocker
-    ):
-        """Test HTTP error without JSON response during message sending."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        requests_mock.post(
-            f"{BASE_URL}/api/v1/public/send-messages",
-            text="Internal Server Error",
-            status_code=500,
+            recipient_value="U123ABC",
+            template_variables={"name": "John"},
         )
 
-        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
-            manager.send_message(
-                template_name="any_template",
+        # Verify result
+        assert result == "test_msg_123"
+
+        # Verify request was made correctly
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+
+        # Check URL and method
+        assert call_args[1]["method"] == "POST"
+        assert call_args[1]["url"] == f"{BASE_URL}/api/v1/public/send-messages"
+
+        # Check payload has camelCase fields
+        payload = call_args[1]["json"]
+        assert "templateVariables" in payload
+        assert payload["templateVariables"]["name"] == "John"
+        assert payload["template"]["name"] == "test_template"
+
+    @patch("siren.managers.base.requests.request")
+    def test_get_message_status_success(self, mock_request):
+        """Test successful message status retrieval."""
+        # Mock successful API response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": {"status": "DELIVERED"},
+            "error": None,
+        }
+        mock_request.return_value = mock_response
+
+        # Call the method
+        result = self.manager.get_message_status("test_msg_123")
+
+        # Verify result
+        assert result == "DELIVERED"
+
+    @patch("siren.managers.base.requests.request")
+    def test_get_replies_success(self, mock_request):
+        """Test successful replies retrieval."""
+        # Mock successful API response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [
+                {
+                    "text": "Reply 1",
+                    "user": "U123",
+                    "ts": "12345.6789",
+                    "threadTs": "12345.0000",
+                },
+                {
+                    "text": "Reply 2",
+                    "user": "U456",
+                    "ts": "12346.7890",
+                    "threadTs": "12345.0000",
+                },
+            ],
+            "error": None,
+        }
+        mock_request.return_value = mock_response
+
+        # Call the method
+        result = self.manager.get_replies("test_msg_123")
+
+        # Verify result
+        assert len(result) == 2
+        assert result[0].text == "Reply 1"
+        assert result[0].user == "U123"
+        assert result[1].text == "Reply 2"
+        assert result[1].user == "U456"
+
+    @patch("siren.managers.base.requests.request")
+    def test_api_error_handling(self, mock_request):
+        """Test that API errors are properly handled."""
+        # Mock API error response
+        mock_response = Mock()
+        mock_response.status_code = 404
+        mock_response.json.return_value = {
+            "data": None,
+            "error": {"errorCode": "NOT_FOUND", "message": "Template not found"},
+        }
+        mock_request.return_value = mock_response
+
+        # Should raise SirenAPIError
+        with pytest.raises(SirenAPIError) as exc_info:
+            self.manager.send_message(
+                template_name="nonexistent",
                 channel="SLACK",
                 recipient_type="direct",
                 recipient_value="U123",
             )
-        assert excinfo.value.response.status_code == 500
-        assert excinfo.value.response.text == "Internal Server Error"
 
-    def test_send_message_request_exception(self, requests_mock: RequestsMocker):
-        """Test requests.exceptions.RequestException during message sending."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        requests_mock.post(
-            f"{BASE_URL}/api/v1/public/send-messages",
-            exc=requests.exceptions.ConnectTimeout,
+        assert exc_info.value.error_code == "NOT_FOUND"
+        assert "Template not found" in exc_info.value.api_message
+
+    @patch("siren.managers.base.requests.request")
+    def test_send_message_without_template_variables(self, mock_request):
+        """Test sending message without template variables."""
+        # Mock successful API response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": {"notificationId": "test_msg_456"},
+            "error": None,
+        }
+        mock_request.return_value = mock_response
+
+        # Call the method without template_variables
+        result = self.manager.send_message(
+            template_name="simple_template",
+            channel="EMAIL",
+            recipient_type="direct",
+            recipient_value="test@example.com",
         )
 
-        with pytest.raises(requests.exceptions.RequestException):
-            manager.send_message(
-                template_name="any_template",
+        # Verify result
+        assert result == "test_msg_456"
+
+        # Verify payload excludes templateVariables when None
+        payload = mock_request.call_args[1]["json"]
+        assert "templateVariables" not in payload
+
+    @patch("siren.managers.base.requests.request")
+    def test_get_replies_empty_list(self, mock_request):
+        """Test get_replies when no replies exist."""
+        # Mock successful API response with empty list
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": [], "error": None}
+        mock_request.return_value = mock_response
+
+        # Call the method
+        result = self.manager.get_replies("test_msg_no_replies")
+
+        # Verify result
+        assert result == []
+        assert len(result) == 0
+
+    @patch("siren.managers.base.requests.request")
+    def test_network_error_handling(self, mock_request):
+        """Test handling of network errors."""
+        # Mock network error
+        mock_request.side_effect = Exception("Connection timeout")
+
+        # Should raise SirenSDKError
+        with pytest.raises(SirenSDKError) as exc_info:
+            self.manager.send_message(
+                template_name="test",
                 channel="SLACK",
                 recipient_type="direct",
                 recipient_value="U123",
             )
 
-    def test_get_replies_success(self, requests_mock: RequestsMocker):
-        """Test successful retrieval of message replies."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_123"
-        expected_replies = [
-            {"text": "Reply 1", "user": "U123", "ts": "12345.6789"},
-            {"text": "Reply 2", "user": "U456", "ts": "12346.7890"},
-        ]
-        mock_response_data = {"data": expected_replies, "error": None}
-
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
-            json=mock_response_data,
-            status_code=200,
-        )
-        response = manager.get_replies(message_id=message_id)
-        assert response == mock_response_data
-        assert response["data"] == expected_replies
-
-    def test_get_replies_no_replies(self, requests_mock: RequestsMocker):
-        """Test retrieval when a message has no replies."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_no_replies"
-        mock_response_data = {"data": [], "error": None}
-
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
-            json=mock_response_data,
-            status_code=200,
-        )
-        response = manager.get_replies(message_id=message_id)
-        assert response == mock_response_data
-        assert response["data"] == []
-
-    def test_get_replies_http_error_json_response(self, requests_mock: RequestsMocker):
-        """Test HTTP error with JSON response during get_replies."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_error_json"
-        error_response = {"error": "Not Found", "message": "Message ID does not exist."}
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
-            json=error_response,
-            status_code=404,
-        )
-        response = manager.get_replies(message_id=message_id)
-        assert response == error_response
-
-    def test_get_replies_http_error_no_json_response(
-        self, requests_mock: RequestsMocker
-    ):
-        """Test HTTP error without JSON response during get_replies."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_error_no_json"
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
-            text="Internal Server Error",
-            status_code=500,
-        )
-        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
-            manager.get_replies(message_id=message_id)
-        assert excinfo.value.response.status_code == 500
-        assert excinfo.value.response.text == "Internal Server Error"
-
-    def test_get_replies_request_exception(self, requests_mock: RequestsMocker):
-        """Test requests.exceptions.RequestException during get_replies."""
-        manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
-        message_id = "msg_req_exception"
-        requests_mock.get(
-            f"{BASE_URL}/api/v1/public/get-reply/{message_id}",
-            exc=requests.exceptions.Timeout("Connection timed out"),
-        )
-        with pytest.raises(requests.exceptions.RequestException):
-            manager.get_replies(message_id=message_id)
-
-
-def test_siren_client_send_message(mocker):
-    """Test SirenClient.send_message calls MessagingManager correctly."""
-    client = SirenClient(api_key=API_KEY)
-    mock_messaging_manager_send = mocker.patch.object(client._messaging, "send_message")
-    mock_response = {"data": "success"}
-    mock_messaging_manager_send.return_value = mock_response
-
-    template_name = "client_test_template"
-    channel = "EMAIL"
-    recipient_type = "direct_client"
-    recipient_value = "client@example.com"
-    template_variables = {"client_var": "client_val"}
-
-    response = client.send_message(
-        template_name=template_name,
-        channel=channel,
-        recipient_type=recipient_type,
-        recipient_value=recipient_value,
-        template_variables=template_variables,
-    )
-
-    assert response == mock_response
-    mock_messaging_manager_send.assert_called_once_with(
-        template_name=template_name,
-        channel=channel,
-        recipient_type=recipient_type,
-        recipient_value=recipient_value,
-        template_variables=template_variables,
-    )
-
-
-def test_siren_client_get_replies(mocker):
-    """Test SirenClient.get_replies calls MessagingManager correctly."""
-    client = SirenClient(api_key=API_KEY)
-    mock_messaging_manager_get_replies = mocker.patch.object(
-        client._messaging, "get_replies"
-    )
-    mock_response = {"data": [{"text": "A reply"}]}
-    mock_messaging_manager_get_replies.return_value = mock_response
-    message_id = "msg_client_test"
-
-    response = client.get_replies(message_id=message_id)
-
-    mock_messaging_manager_get_replies.assert_called_once_with(message_id=message_id)
-    assert response == mock_response
-
-
-def test_siren_client_get_message_status(mocker):
-    """Test SirenClient.get_message_status calls MessagingManager correctly."""
-    client = SirenClient(api_key=API_KEY)
-    mock_messaging_manager_get_status = mocker.patch.object(
-        client._messaging, "get_message_status"
-    )
-    mock_response = {"data": {"status": "SENT"}}
-    mock_messaging_manager_get_status.return_value = mock_response
-    message_id = "msg_client_status_test"
-
-    response = client.get_message_status(message_id=message_id)
-
-    mock_messaging_manager_get_status.assert_called_once_with(message_id=message_id)
-    assert response == mock_response
+        assert "Connection timeout" in str(exc_info.value)
