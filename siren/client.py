@@ -5,12 +5,13 @@ from typing import Any, Dict, List, Optional
 from pydantic import EmailStr
 
 from .managers.messaging import MessagingManager
+from .managers.templates import TemplatesManager
 from .managers.users import UsersManager
 from .managers.webhooks import WebhooksManager
 from .models.messaging import ReplyData
+from .models.templates import ChannelTemplate, CreatedTemplate, Template
 from .models.user import User
 from .models.webhooks import WebhookConfig
-from .templates import TemplatesManager
 from .workflows import WorkflowsManager
 
 
@@ -49,7 +50,7 @@ class SirenClient:
         sort: Optional[str] = None,
         page: Optional[int] = None,
         size: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[Template]:
         """Fetch templates.
 
         Args:
@@ -60,7 +61,7 @@ class SirenClient:
             size: Page size.
 
         Returns:
-            A dictionary containing the API response.
+            List[Template]: A list of Template models.
         """
         return self._templates.get_templates(
             tag_names=tag_names,
@@ -70,72 +71,67 @@ class SirenClient:
             size=size,
         )
 
-    def create_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_template(self, **template_data) -> CreatedTemplate:
         """Create a new template.
 
         Args:
-            template_data: A dictionary containing the template details.
+            **template_data: Template attributes (name, description, tag_names, variables, configurations).
 
         Returns:
-            A dictionary containing the API response.
+            CreatedTemplate: A CreatedTemplate model representing the created template.
         """
-        return self._templates.create_template(template_data=template_data)
+        return self._templates.create_template(**template_data)
 
-    def update_template(
-        self, template_id: str, template_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def update_template(self, template_id: str, **template_data) -> Template:
         """Update an existing template.
 
         Args:
             template_id: The ID of the template to update.
-            template_data: A dictionary containing the template details to update.
+            **template_data: Template attributes to update (name, description, tag_names, variables).
 
         Returns:
-            A dictionary containing the API response.
+            Template: A Template model representing the updated template.
         """
-        return self._templates.update_template(
-            template_id=template_id, template_data=template_data
-        )
+        return self._templates.update_template(template_id, **template_data)
 
-    def delete_template(self, template_id: str) -> Dict[str, Any]:
+    def delete_template(self, template_id: str) -> bool:
         """Delete an existing template.
 
         Args:
             template_id: The ID of the template to delete.
 
         Returns:
-            A dictionary containing the API response.
+            bool: True if deletion was successful.
         """
-        return self._templates.delete_template(template_id=template_id)
+        return self._templates.delete_template(template_id)
 
-    def publish_template(self, template_id: str) -> Dict[str, Any]:
+    def publish_template(self, template_id: str) -> Template:
         """Publish an existing template.
 
         Args:
             template_id: The ID of the template to publish.
 
         Returns:
-            A dictionary containing the API response.
+            Template: A Template model representing the published template.
         """
-        return self._templates.publish_template(template_id=template_id)
+        return self._templates.publish_template(template_id)
 
     def create_channel_templates(
-        self,
-        template_id: str,
-        channel_templates: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        self, template_id: str, **channel_templates_data
+    ) -> List[ChannelTemplate]:
         """Create or update channel templates for a specific template.
 
         Args:
             template_id: The ID of the template for which to create channel templates.
-            channel_templates: A dictionary where keys are channel names (e.g., "EMAIL", "SMS")
-                             and values are the channel-specific template objects.
+            **channel_templates_data: Channel templates configuration where keys are
+                                    channel names (e.g., "EMAIL", "SMS") and values
+                                    are the channel-specific template objects.
 
         Returns:
-            A dictionary containing the API response.
+            List[ChannelTemplate]: List of created channel template objects.
         """
         return self._templates.create_channel_templates(
-            template_id=template_id, channel_templates=channel_templates
+            template_id, **channel_templates_data
         )
 
     def get_channel_templates(
@@ -146,7 +142,7 @@ class SirenClient:
         sort: Optional[str] = None,
         page: Optional[int] = None,
         size: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[ChannelTemplate]:
         """Get channel templates for a specific template version.
 
         Args:
@@ -158,7 +154,7 @@ class SirenClient:
             size: Page size.
 
         Returns:
-            A dictionary containing the API response.
+            List[ChannelTemplate]: List of channel template objects.
         """
         return self._templates.get_channel_templates(
             version_id=version_id,

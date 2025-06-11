@@ -45,3 +45,13 @@ class BaseAPIResponse(BaseModel, Generic[T]):
         if self.errors:
             return self.errors[0]
         return None
+
+
+class DeleteResponse(BaseAPIResponse[None]):
+    """Common response model for delete operations across the SDK.
+
+    For successful deletions (204), data will be None.
+    For errors, error/errors/meta fields will be populated.
+    """
+
+    pass

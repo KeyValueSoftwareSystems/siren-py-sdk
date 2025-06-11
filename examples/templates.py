@@ -1,192 +1,153 @@
-"""Examples for template-related operations using the Siren SDK."""
+"""Example script demonstrating template methods using SirenClient."""
 
-import json
 import os
 import sys
 
-from dotenv import load_dotenv
+from siren.client import SirenClient
+from siren.exceptions import SirenAPIError, SirenSDKError
 
-# Ensure the 'siren' package in the parent directory can be imported:
+# Allow running from examples directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from siren import SirenClient
 
-
-def run_get_templates_example(client: SirenClient):
-    """Runs the example for fetching templates."""
-    print("--- Fetching Templates ---")
+def get_templates_example(client: SirenClient) -> None:
+    """Example of getting templates."""
     try:
-        templates_response = client.get_templates(
-            page=0,
-            size=2,  # Get first 2 templates for brevity
+        templates = client.get_templates(page=0, size=2)
+        print(f"Retrieved {len(templates)} templates")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
+def create_template_example(client: SirenClient) -> str:
+    """Example of creating a template."""
+    import time
+
+    timestamp = int(time.time())
+
+    try:
+        created = client.create_template(
+            name=f"SDK_Example_Template_{timestamp}",
+            description="Test template from SDK",
+            tag_names=["sdk-test", "example"],
+            variables=[{"name": "user_name", "defaultValue": "Guest"}],
+            configurations={
+                "EMAIL": {
+                    "subject": "Hello {{user_name}}!",
+                    "channel": "EMAIL",
+                    "body": "<p>Welcome {{user_name}}!</p>",
+                    "isRawHTML": True,
+                    "isPlainText": False,
+                }
+            },
         )
-        if templates_response and templates_response.get("error") is None:
-            print("Successfully fetched templates:")
-        print(json.dumps(templates_response, indent=2))
-    except Exception as e:
-        print(f"Error fetching templates: {e}")
+        print(f"Created template: {created.template_id}")
+        return created.template_id
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+        return None
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+        return None
 
 
-def run_create_template_example(client: SirenClient):
-    """Runs the example for creating a template."""
-    print("\n--- Creating a Template ---")
-    new_template_payload = {
-        "name": "Sample5",
-        "description": "A simple template created via the examples/templates.py script.",
-        "tagNames": ["sdk-example", "template-ops"],
-        "variables": [{"name": "user_name", "defaultValue": "Guest"}],
-        "configurations": {
-            "EMAIL": {
-                "subject": "SDK Test Email for {{user_name}} from templates.py",
+def update_template_example(client: SirenClient, template_id: str) -> None:
+    """Example of updating a template."""
+    try:
+        updated = client.update_template(
+            template_id,
+            name="Updated_SDK_Example",
+            description="Updated description from SDK",
+            tag_names=["updated", "sdk-test"],
+        )
+        print(f"Updated template: {updated.id}")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
+def publish_template_example(client: SirenClient, template_id: str):
+    """Example of publishing a template."""
+    try:
+        published = client.publish_template(template_id)
+        print(f"Published template: {published.id}")
+        return published
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+        return None
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+        return None
+
+
+def create_channel_templates_example(client: SirenClient, template_id: str) -> None:
+    """Example of creating channel templates for a template."""
+    try:
+        result = client.create_channel_templates(
+            template_id,
+            SMS={
+                "body": "Hello {{user_name}}! This is from SDK.",
+                "channel": "SMS",
+                "isFlash": False,
+                "isUnicode": False,
+            },
+            EMAIL={
+                "subject": "Welcome {{user_name}}!",
                 "channel": "EMAIL",
-                "body": "<p>Hello {{user_name}}, this is a test from examples/templates.py!</p>",
+                "body": "<p>Hello {{user_name}}, welcome from SDK!</p>",
                 "isRawHTML": True,
                 "isPlainText": False,
-            }
-        },
-    }
-    try:
-        created_template_response = client.create_template(new_template_payload)
-        if created_template_response and created_template_response.get("error") is None:
-            print("Successfully created template:")
-        print(json.dumps(created_template_response, indent=2))
-    except Exception as e:
-        print(f"Error creating template: {e}")
-
-
-def run_update_template_example(client: SirenClient):
-    """Runs the example for updating a template."""
-    print("\n--- Updating a Template ---")
-    template_id_to_update = "dc58f20d-bad1-4ffd-8f92-34682397100f"
-    update_payload = {
-        "name": "Updated_SDK_Example_Template",
-        "description": "This template was updated by the examples/templates.py script.",
-        "tagNames": ["sdk-example", "update-op"],
-        "variables": [{"name": "customer_name", "defaultValue": "Valued Customer"}],
-        "configurations": {
-            "EMAIL": {
-                "subject": "Updated Subject for {{customer_name}}",
-                "body": "<p>Hello {{customer_name}}, your template has been updated!</p>",
-            }
-        },
-    }
-
-    try:
-        updated_template_response = client.update_template(
-            template_id_to_update, update_payload
+            },
         )
-        if updated_template_response and updated_template_response.get("error") is None:
-            print(f"Successfully updated template '{template_id_to_update}':")
-        print(json.dumps(updated_template_response, indent=2))
-    except Exception as e:
-        print(f"Error updating template '{template_id_to_update}': {e}")
+        print(f"Created {len(result)} channel templates")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
 
 
-def run_delete_template_example(client: SirenClient):
-    """Runs the example for deleting a template."""
-    print("\n--- Deleting a Template ---")
-    template_id_to_delete = "b5d4cdf8-a46a-4867-aa02-c7551d3fe747"
-
+def get_channel_templates_example(client: SirenClient, version_id: str) -> None:
+    """Example of getting channel templates for a template version."""
     try:
-        delete_response = client.delete_template(template_id_to_delete)
-        if delete_response and delete_response.get("status") == "success":
-            print(f"Successfully deleted template '{template_id_to_delete}':")
-        print(json.dumps(delete_response, indent=2))
-    except Exception as e:
-        print(f"Error deleting template '{template_id_to_delete}': {e}")
+        result = client.get_channel_templates(version_id, page=0, size=5)
+        print(f"Retrieved {len(result)} channel templates")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
 
 
-def run_publish_template_example(client: SirenClient):
-    """Runs the example for publishing a template."""
-    print("\n--- Publishing a Template ---")
-    template_id_to_publish = "11921404-4517-48b7-82ee-fcdcf8f9c03b"
-
+def delete_template_example(client: SirenClient, template_id: str) -> None:
+    """Example of deleting a template."""
     try:
-        publish_response = client.publish_template(template_id_to_publish)
-        if publish_response and publish_response.get("error") is None:
-            print(f"Successfully published template '{template_id_to_publish}':")
-        print(json.dumps(publish_response, indent=2))
-    except Exception as e:
-        print(f"Error publishing template '{template_id_to_publish}': {e}")
-
-
-def run_create_channel_templates_example(client: SirenClient):
-    """Runs the example for creating channel templates for a template."""
-    print("\n--- Creating Channel Templates for a Template ---")
-    template_id_for_channel_templates = (
-        "cacf1503-8283-42a8-b5fd-27d85054fb99"  # Replace with an actual template ID
-    )
-    channel_templates_payload = {
-        "SMS": {
-            "body": "Exciting discounts are ON",
-            "channel": "SMS",
-            "isFlash": False,
-            "isUnicode": False,
-        },
-        "EMAIL": {
-            "subject": "Exciting discount at our store online",
-            "channel": "EMAIL",
-            "body": "<p>Hello from Siren SDK! This is an email channel configuration.</p>",
-            "attachments": [],
-            "isRawHTML": True,
-            "isPlainText": False,
-        },
-    }
-
-    try:
-        response = client.create_channel_templates(
-            template_id_for_channel_templates, channel_templates_payload
-        )
-        if response and response.get("error") is None:
-            print(
-                f"Successfully created/updated channel templates for template '{template_id_for_channel_templates}':"
-            )
-        print(json.dumps(response, indent=2))
-    except Exception as e:
-        print(
-            f"Error creating/updating channel templates for template '{template_id_for_channel_templates}': {e}"
-        )
-
-
-def run_get_channel_templates_example(client: SirenClient):
-    """Runs the example for fetching channel templates for a template version."""
-    print("\n--- Fetching Channel Templates for a Version ---")
-    version_id_to_fetch = "9138125c-d242-4b17-ae0e-16ade9d06568"
-
-    try:
-        response = client.get_channel_templates(
-            version_id=version_id_to_fetch,
-            page=0,  # Optional: get the first page
-            size=5,  # Optional: get up to 5 channel templates
-        )
-        if response and response.get("error") is None:
-            print(
-                f"Successfully fetched channel templates for version '{version_id_to_fetch}':"
-            )
-        print(json.dumps(response, indent=2))
-    except Exception as e:
-        print(
-            f"Error fetching channel templates for version '{version_id_to_fetch}': {e}"
-        )
+        result = client.delete_template(template_id)
+        if result:
+            print(f"Successfully deleted template: {template_id}")
+        else:
+            print(f"Failed to delete template: {template_id}")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
 
 
 if __name__ == "__main__":
-    load_dotenv()
-
-    api_key = os.getenv("SIREN_API_KEY")
-
+    api_key = os.environ.get("SIREN_API_KEY")
     if not api_key:
-        print(
-            "Error: SIREN_API_KEY is not set. Please check your .env file or environment variables."
-        )
+        print("Error: SIREN_API_KEY environment variable not set.")
         sys.exit(1)
 
-    siren_client = SirenClient(api_key=api_key)
+    client = SirenClient(api_key)
 
-    run_get_templates_example(siren_client)
-    # run_create_template_example(siren_client)
-    # run_update_template_example(siren_client)
-    # run_delete_template_example(siren_client)
-    # run_publish_template_example(siren_client)
-    # run_create_channel_templates_example(siren_client)
-    # run_get_channel_templates_example(siren_client)
+    get_templates_example(client)
+    template_id = create_template_example(client)
+    if template_id:
+        update_template_example(client, template_id)
+        create_channel_templates_example(client, template_id)
+        published = publish_template_example(client, template_id)
+        if published and published.published_version:
+            get_channel_templates_example(client, published.published_version.id)
+        delete_template_example(client, template_id)

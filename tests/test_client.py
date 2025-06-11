@@ -23,5 +23,5 @@ def test_siren_client_initialization(client):
         client._templates.api_key == "test_api_key"
     ), "Templates manager should have API key"
     assert (
-        client._templates.base_url == f"{client.BASE_API_URL}/api/v1/public"
-    ), "Templates manager should construct its specific v1 base URL"
+        client._templates.base_url == client.BASE_API_URL
+    ), "Templates manager should use the base URL from client"

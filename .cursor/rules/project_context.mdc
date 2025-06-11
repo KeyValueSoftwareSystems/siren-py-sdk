@@ -11,11 +11,11 @@ Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysir
 
 ## Key Features / Functional Modules
 
-- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/templates.py`
-- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/workflows.py`
+- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/managers/templates.py`
 - **Users** - Add, update, delete users → `siren/managers/users.py`
-- **Messaging** - Send messages, get replies, track status → `siren/messaging.py`
-- **Webhooks** - Configure notification and inbound webhooks → `siren/webhooks.py`
+- **Messaging** - Send messages, get replies, track status → `siren/managers/messaging.py`
+- **Webhooks** - Configure notification and inbound webhooks → `siren/managers/webhooks.py`
+- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/workflows.py`
 - **Client** - Unified API entry point → `siren/client.py`
 
 ## Codebase Structure Overview
@@ -24,17 +24,20 @@ Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysir
 siren-ai/
 ├── siren/                    # Main SDK package
 │   ├── client.py            # Main SirenClient - unified API entry point
-│   ├── templates.py         # TemplatesManager - template operations
-│   ├── workflows.py         # WorkflowsManager - workflow operations
-│   ├── messaging.py         # MessagingManager - message operations
-│   ├── webhooks.py          # WebhookManager - webhook configuration
 │   ├── exceptions.py        # Custom exception classes (SirenAPIError, SirenSDKError)
-│   ├── managers/            # Manager base classes and implementations
+│   ├── workflows.py         # WorkflowsManager - workflow operations (legacy direct HTTP)
+│   ├── managers/            # BaseManager implementations (core pattern)
 │   │   ├── base.py          # BaseManager - shared HTTP/error handling
-│   │   └── users.py         # UsersManager - user management
+│   │   ├── templates.py     # TemplatesManager - template operations
+│   │   ├── users.py         # UsersManager - user management
+│   │   ├── messaging.py     # MessagingManager - message operations
+│   │   └── webhooks.py      # WebhooksManager - webhook configuration
 │   └── models/              # Pydantic data models
-│       ├── base.py          # Base response models and error handling
-│       └── user.py          # User-specific models
+│       ├── base.py          # Base response models and common patterns
+│       ├── templates.py     # Template-specific models
+│       ├── user.py          # User-specific models
+│       ├── messaging.py     # Messaging models
+│       └── webhooks.py      # Webhook models
 ├── tests/                   # Comprehensive test suite with ~95% coverage
 ├── examples/                # Usage examples for each module
 ├── pyproject.toml          # Project configuration, dependencies, tools
@@ -49,6 +52,12 @@ siren-ai/
 - **Models** (Pydantic) - Request/response validation, field aliasing (snake_case ↔ camelCase)
 - **Exceptions** - `SirenAPIError` (API errors: 400/401/404) vs `SirenSDKError` (SDK issues: network/validation)
 
+**BaseManager Pattern** (Core Architecture):
+- All managers inherit from `BaseManager` for consistent HTTP handling
+- Requires both `request_model` and `response_model` for JSON operations
+- Automatic Pydantic validation, error handling, and response parsing
+- Common patterns: `DeleteResponse[None]` for 204 responses, flexible models with optional fields
+
 **Request Flow**: Client → Manager → HTTP Request → API → Response → Model → Client
 - Managers prepare requests with Pydantic validation → HTTP to Siren API → Responses parsed through models → Errors become structured exceptions
 
@@ -57,63 +66,37 @@ siren-ai/
 - **Authentication**: Bearer token in `Authorization` header
 - **Status Handling**: Explicit `if status_code == 200` checks instead of `response.ok`
 - **API Versioning**: Templates/Users/Messaging/Webhooks use `/api/v1/public/`, Workflows use `/api/v2/`
-**Base URL**: `https://api.dev.trysiren.io` (TODO: auto-select based on API key type)
+- **Base URL**: `https://api.dev.trysiren.io` (TODO: auto-select based on API key type)
 
 ## Tech Stack
 
 **Core**: Python 3.8+, `requests`, `pydantic[email]`
 **Dev Tools**: `pytest` + mocking, `ruff`, `pyright`, `pre-commit`, `uv`
 
-## Dev & Build Commands
-
-```bash
-# Setup development environment
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-
-# Code quality
-uv run ruff check .                 # Lint code
-uv run ruff format .               # Format code
-uv run pyright                     # Type checking
-uv run pre-commit run --all-files  # Run all pre-commit hooks
-
-# Testing
-uv run pytest                      # Run all tests
-uv run pytest --cov=siren         # Run tests with coverage
-uv run pytest tests/test_templates.py -v  # Run specific test module
-
-# Build and publish
-python -m build            # Build wheel and sdist
-twine upload dist/*        # Upload to PyPI
-```
-
-
-
 ## Testing
 
 **Strategy**: `requests-mock` with realistic API data
 **Organization**: One test file per manager, shared `client` fixture
+**Philosophy**: SDK testing focuses on request formatting, response parsing, error propagation - not API business logic
 
 ## Key Files
 
 - **`siren/client.py`** - Main client interface
-- **`siren/managers/base.py`** - BaseManager with unified HTTP/error handling
-- **`siren/templates.py`** - Most complex manager, full patterns
+- **`siren/managers/base.py`** - BaseManager with unified HTTP/error handling (core pattern)
+- **`siren/managers/templates.py`** - Most complex manager, full BaseManager patterns
 - **`siren/models/base.py`** - Core models and error handling
 - **`siren/exceptions.py`** - Exception patterns
 
 ## Gotchas
 
-**Mixed Return Types**: Templates/Workflows/Messaging return `Dict[str, Any]`, Users return `User` models
 **Field Serialization**: Always use `by_alias=True` when calling `model_dump()`
+**BaseManager Requirements**: Both request_model and response_model needed for JSON operations
 
 ## TODO / Future Areas
 
-**Configuration Improvements**:
-- Auto-select API URL based on API key type (dev/prod) or environment variable
-
 **Architecture Enhancements**:
-- Consider standardizing return types across all managers (currently mixed Dict vs Models)
+- Migrate WorkflowsManager to BaseManager pattern
+- Auto-select API URL based on API key type (dev/prod) or environment variable
 - Add retry logic for transient network failures
 - Add request/response logging capabilities
 

@@ -1,5 +1,6 @@
 """Manages user-related operations for the Siren API client."""
 
+from ..models.base import DeleteResponse
 from ..models.user import User, UserAPIResponse, UserRequest
 from .base import BaseManager
 
@@ -67,6 +68,6 @@ class UsersManager(BaseManager):
         return self._make_request(
             method="DELETE",
             endpoint=f"/api/v1/public/users/{unique_id}",
-            response_model=UserAPIResponse,
+            response_model=DeleteResponse,
             expected_status=204,
         )
