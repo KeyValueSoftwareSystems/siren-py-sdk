@@ -4,36 +4,12 @@ This is the official Python SDK for the [Siren notification platform](https://do
 
 ## Table of Contents
 
-- [Siren AI Python SDK (`siren-ai`)](#siren-ai-python-sdk-siren-ai)
-  - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Basic Usage](#basic-usage)
-  - [Features](#features)
-    - [`get_templates()`](#get_templates)
-    - [`create_template()`](#create_template)
-    - [`update_template()`](#update_template)
-    - [`delete_template()`](#delete_template)
-    - [`publish_template()`](#publish_template)
-    - [`create_channel_templates()`](#create_channel_templates)
-    - [`get_channel_templates()`](#get_channel_templates)
-    - [`send_message()`](#send_message)
-    - [`get_replies()`](#get_replies)
-    - [`get_message_status()`](#get_message_status)
-    - [`configure_notifications_webhook()`](#configure_notifications_webhook)
-    - [`configure_inbound_message_webhook()`](#configure_inbound_message_webhook)
-    - [`trigger_workflow()`](#trigger_workflow)
-    - [`trigger_bulk_workflow()`](#trigger_bulk_workflow)
-    - [`schedule_workflow()`](#schedule_workflow)
-    - [`add_user()`](#add_user)
-    - [`update_user()`](#update_user)
-    - [`delete_user()`](#delete_user)
-  - [Getting Started for Package Developers](#getting-started-for-package-developers)
-    - [Prerequisites](#prerequisites)
-    - [Setup Steps](#setup-steps)
-    - [Code Style \& Linting](#code-style--linting)
-    - [Running Tests](#running-tests)
-    - [Submitting Changes](#submitting-changes)
-  - [Future Enhancements](#future-enhancements)
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [SDK Methods](#sdk-methods)
+- [Examples](#examples)
+- [For Package Developers](#getting-started-for-package-developers)
+- [Future Enhancements](#future-enhancements)
 
 ## Installation
 
@@ -46,495 +22,57 @@ pip install siren-ai
 ```python
 from siren import SirenClient
 
-# Initialize the client by passing your API key:
+# Initialize the client
 client = SirenClient(api_key="YOUR_SIREN_API_KEY")
 
-# Example: Get templates
-# Get the first 5 templates
-templates_response = client.get_templates(page=0, size=5)
-print(templates_response)
+# Send a message
+message_id = client.send_message(
+    template_name="welcome_email",
+    channel="EMAIL",
+    recipient_type="direct",
+    recipient_value="user@example.com",
+    template_variables={"user_name": "John Doe"}
+)
+print(f"Message sent! ID: {message_id}")
 ```
 
-## Features
+## SDK Methods
 
 The Siren-AI Python SDK provides an interface to interact with the Siren API.
 
-### `get_templates()`
-
-Retrieves a list of notification templates.
-
-**Parameters:**
-*   Supports optional filtering (`tag_names`, `search`), sorting (`sort`), and pagination (`page`, `size`). Refer to the official Siren API documentation for detailed parameter usage.
-
-**Example:**
-```python
-# Get 5 templates, sorted by name
-templates_response = client.get_templates(size=5, sort="name,asc")
-print(templates_response)
-```
-
-### `create_template()`
-
-Creates a new notification template.
-
-**Parameters:**
-*   `template_data` (Dict[str, Any]): A dictionary representing the template structure. Key fields include `name`, `configurations`, etc. For the detailed payload structure, please refer to the official Siren API documentation.
-
-**Example:**
-```python
-new_template_payload = {
-  "name": "SDK_Quick_Template",
-  "configurations": {
-    "EMAIL": {
-      "subject": "Quick Test",
-      "body": "<p>Hello via SDK!</p>"
-    }
-  }
-}
-created_template_response = client.create_template(new_template_payload)
-print(created_template_response)
-```
-
-### `update_template()`
-
-Updates an existing notification template.
-
-**Parameters:**
-*   `template_id` (str): The ID of the template to update.
-*   `template_data` (Dict[str, Any]): A dictionary containing the template fields to update. For the detailed payload structure, please refer to the official Siren API documentation.
-
-**Example:**
-```python
-existing_template_id = "YOUR_EXISTING_TEMPLATE_ID"
-update_payload = {
-  "name": "Updated SDK Template Name",
-  "description": "This template was updated via the SDK.",
-  "tagNames": ["sdk-updated"]
-}
-
-updated_template_response = client.update_template(existing_template_id, update_payload)
-print(updated_template_response)
-
-```
-
-### `delete_template()`
-
-Deletes an existing notification template.
-
-**Parameters:**
-*   `template_id` (str): The ID of the template to delete.
-
-**Example:**
-```python
-template_id_to_delete = "YOUR_TEMPLATE_ID_TO_DELETE"
-
-delete_response = client.delete_template(template_id_to_delete)
-print(delete_response)
-
-```
-
-### `publish_template()`
-
-Publishes an existing notification template, making its latest draft version live.
-
-**Parameters:**
-*   `template_id` (str): The ID of the template to publish.
-
-**Example:**
-```python
-template_id_to_publish = "YOUR_TEMPLATE_ID_TO_PUBLISH"
-
-publish_response = client.publish_template(template_id_to_publish)
-print(publish_response)
-```
-
-### `create_channel_templates()`
-
-Creates or updates channel-specific templates for a given template ID. This method allows you to define different content and settings for various notification channels (e.g., EMAIL, SMS) associated with a single parent template.
-
-**Parameters:**
-*   `template_id` (str): The ID of the template for which to create/update channel templates.
-*   `channel_templates` (Dict[str, Any]): A dictionary where keys are channel names (e.g., "EMAIL", "SMS") and values are the channel-specific template objects. Each object should conform to the structure expected by the Siren API for that channel.
-
-**Example:**
-```python
-template_id = "YOUR_TEMPLATE_ID"
-channel_templates_payload = {
-    "SMS": {
-        "body": "New SMS content via SDK for {{variable_name}}",
-        "channel": "SMS",
-        "isFlash": False
-    },
-    "EMAIL": {
-        "subject": "Channel Config Update for {{variable_name}}",
-        "body": "<p>Updated email body for channel config.</p>",
-        "channel": "EMAIL"
-    }
-}
-
-response = client.create_channel_templates(template_id, channel_templates_payload)
-print(response)
-```
-
-### `get_channel_templates()`
-
-Retrieves the channel templates associated with a specific template version ID.
-
-**Parameters:**
-*   `version_id` (str): The ID of the template version for which to fetch channel templates.
-*   Optional query parameters:
-    *   `channel` (str): Filter by a specific channel (e.g., "EMAIL", "SMS").
-    *   `search` (str): Search term to filter channel templates.
-    *   `sort` (str): Sort order (e.g., "channel,asc").
-    *   `page` (int): Page number for pagination.
-    *   `size` (int): Number of items per page.
-
-**Example:**
-```python
-# Replace with an actual template version ID
-template_version_id = "YOUR_TEMPLATE_VERSION_ID"
-
-# Get all channel templates for a version
-channel_templates_response = client.get_channel_templates(version_id=template_version_id)
-print(channel_templates_response)
-
-# Get SMS channel templates for a version, first page, 5 items
-sms_channel_templates = client.get_channel_templates(
-    version_id=template_version_id,
-    channel="SMS",
-    page=0,
-    size=5
-)
-print(sms_channel_templates)
-```
-
-### `send_message()`
-
-Sends a message using a specified template to a recipient via a chosen channel.
-
-**Parameters:**
-*   `template_name` (str): The name of the template to use.
-*   `channel` (str): The channel through which to send the message (e.g., "EMAIL", "SLACK", "SMS").
-*   `recipient_type` (str): The type of recipient identifier (e.g., "direct", "user_id").
-*   `recipient_value` (str): The actual value of the recipient identifier (e.g., "recipient@example.com", "U123XYZ", "+15551234567").
-*   `template_variables` (Optional[Dict[str, Any]]): A dictionary of variables to be interpolated into the template. Defaults to `None`.
-
-**Example:**
-```python
-# IMPORTANT: Replace with your actual template name, channel, and recipient details.
-template_name = "your_template_name_here"
-channel = "EMAIL"
-recipient_type = "direct"
-recipient_value = "recipient@example.com"
-
-# Optional: Provide template variables if your template requires them
-template_variables = {
-    "user_name": "Alex Doe",
-    "order_id": "ORD98765"
-}
-
-response = client.send_message(
-    template_name=template_name,
-    channel=channel,
-    recipient_type=recipient_type,
-    recipient_value=recipient_value,
-    template_variables=template_variables # Pass None or omit if no variables
-)
-print(response)
-
-if response and response.get("data") and response.get("data", {}).get("notificationId"):
-    print(f"Message sent successfully! Notification ID: {response['data']['notificationId']}")
-else:
-    print(f"Failed to send message. Error: {response.get('error', 'Unknown error')}")
-```
-
-### `get_replies()`
-
-Retrieves the replies for a specific message ID.
-
-**Parameters:**
-*   `message_id` (str): The ID of the message for which to retrieve replies.
-
-**Example:**
-```python
-# IMPORTANT: Replace with an actual message ID
-message_id_to_check = "YOUR_MESSAGE_ID"
-
-replies_response = client.get_replies(message_id=message_id_to_check)
-print(replies_response)
-```
-
-### `get_message_status()`
-
-Retrieves the status of a specific message ID (e.g., "SENT", "DELIVERED", "FAILED").
-
-**Parameters:**
-*   `message_id` (str): The ID of the message for which to retrieve the status.
-
-**Example:**
-```python
-# IMPORTANT: Replace with an actual message ID
-message_id_to_check = "YOUR_MESSAGE_ID"
-
-status_response = client.get_message_status(message_id=message_id_to_check)
-print(f"Message status: {status_response['data']['status']}")
-```
-
-### `configure_notifications_webhook()`
-
-Configures the webhook URL for receiving status updates and other notifications from Siren.
-
-**Parameters:**
-*   `url` (str): The URL that Siren will send POST requests to for notifications.
-
-**Example:**
-```python
-webhook_url = "https://your-service.com/siren/notifications"
-response = client.configure_notifications_webhook(url=webhook_url)
-print(response)
-```
-
-### `configure_inbound_message_webhook()`
-
-Configures the webhook URL for receiving inbound messages forwarded by Siren.
-
-**Parameters:**
-*   `url` (str): The URL that Siren will send POST requests to for inbound messages.
-
-**Example:**
-```python
-webhook_url = "https://your-service.com/siren/inbound"
-response = client.configure_inbound_message_webhook(url=webhook_url)
-print(response)
-```
-
-### `trigger_workflow()`
-
-Triggers a specified workflow with the given data and notification payloads.
-
-**Parameters:**
-*   `workflow_name` (str): The name of the workflow to be executed.
-*   `data` (Optional[Dict[str, Any]]): Common data that will be used across all workflow executions. Defaults to `None`.
-*   `notify` (Optional[Dict[str, Any]]): Specific data for this particular workflow execution. Defaults to `None`.
-
-**Example:**
-```python
-workflow_to_trigger = "otp_workflow"
-data_payload = {
-  "subject": "Your One-Time Password",
-  "user_id": "user_12345"
-}
-notify_payload = {
-  "notificationType": "email",
-  "recipient": "customer@example.com",
-  "name": "John Doe"
-}
-
-trigger_response = client.trigger_workflow(
-    workflow_name=workflow_to_trigger,
-    data=data_payload,
-    notify=notify_payload
-)
-print(trigger_response)
-
-# Example: Triggering a workflow with only the name
-minimal_trigger_response = client.trigger_workflow(workflow_name="simple_workflow")
-print(minimal_trigger_response)
-```
-
-### `trigger_bulk_workflow()`
-
-Triggers a specified workflow in bulk for multiple recipients/notifications, with common data applied to all and specific data for each notification.
-
-**Parameters:**
-*   `workflow_name` (str): The name of the workflow to be executed.
-*   `notify` (List[Dict[str, Any]]): A list of notification objects. Your workflow will be executed for each object in this list. Each object contains specific data for that particular workflow execution.
-*   `data` (Optional[Dict[str, Any]]): Common data that will be used across all workflow executions. Defaults to `None`.
-
-**Example:**
-```python
-workflow_to_trigger_bulk = "onboarding_sequence"
-common_payload = {
-  "campaign_source": "webinar_signup_2024"
-}
-individual_notifications = [
-    {
-      "notificationType": "email",
-      "recipient": "user_a@example.com",
-      "name": "Alex",
-      "join_date": "2024-06-01"
-    },
-    {
-      "notificationType": "sms",
-      "recipient": "+15550001111",
-      "segment": "trial_user"
-    },
-    {
-      "notificationType": "email",
-      "recipient": "user_b@example.com",
-      "name": "Beth",
-      "join_date": "2024-06-02"
-    }
-]
-
-bulk_response = client.trigger_bulk_workflow(
-    workflow_name=workflow_to_trigger_bulk,
-    notify=individual_notifications,
-    data=common_payload
-)
-print(bulk_response)
-
-# Example: Bulk triggering with only notify list (no common data)
-minimal_bulk_response = client.trigger_bulk_workflow(
-    workflow_name="simple_bulk_actions",
-    notify=[
-        {"action": "activate_feature_x", "user_id": "user_c@example.com"},
-        {"action": "send_survey_y", "user_id": "user_d@example.com"}
-    ]
-)
-print(minimal_bulk_response)
-```
-
-### `schedule_workflow()`
-
-Schedules a workflow to run at a future time, either once or on a recurring basis.
-
-**Parameters:**
-*   `name` (str): A descriptive name for the schedule.
-*   `schedule_time` (str): The time of day for the schedule to run (e.g., "09:00:00").
-*   `timezone_id` (str): The IANA timezone ID for the schedule (e.g., "America/New_York").
-*   `start_date` (str): The date when the schedule should start (e.g., "2025-08-01").
-*   `workflow_type` (str): The type of recurrence (e.g., "ONCE", "DAILY", "WEEKLY", "MONTHLY").
-*   `workflow_id` (str): The ID of the workflow to schedule.
-*   `input_data` (Dict[str, Any]): The input data for the workflow.
-*   `end_date` (Optional[str]): The date when the schedule should end (inclusive). Required for recurring schedules other than "ONCE". Defaults to `None`.
-
-**Example:**
-```python
-# Schedule a workflow to run daily
-daily_schedule_response = client.schedule_workflow(
-    name="Daily Report Generation",
-    schedule_time="09:00:00",
-    timezone_id="America/New_York",
-    start_date="2025-08-01",
-    workflow_type="DAILY",
-    workflow_id="YOUR_WORKFLOW_ID",
-    input_data={"report_type": "sales_summary"},
-    end_date="2025-08-31"
-)
-print(daily_schedule_response)
-
-# Schedule a workflow to run once
-once_schedule_response = client.schedule_workflow(
-    name="One-Time Data Processing",
-    schedule_time="15:30:00",
-    timezone_id="America/New_York",
-    start_date="2025-09-15",
-    workflow_type="ONCE",
-    workflow_id="YOUR_OTHER_WORKFLOW_ID",
-    input_data={"task_id": "process_batch_xyz"}
-    # end_date is not provided for "ONCE" type
-)
-print(once_schedule_response)
-```
-
-### `add_user()`
-
-Creates a new user or updates an existing user if a user with the given `unique_id` already exists.
-
-**Parameters:**
-*   `unique_id` (str): The unique identifier for the user. This is a required field.
-*   `first_name` (Optional[str]): The user's first name.
-*   `last_name` (Optional[str]): The user's last name.
-*   `reference_id` (Optional[str]): An external reference ID for the user.
-*   `whatsapp` (Optional[str]): The user's WhatsApp number (e.g., "+14155552671").
-*   `active_channels` (Optional[List[str]]): A list of channels the user is active on (e.g., `["EMAIL", "SMS", "WHATSAPP"]`).
-*   `active` (Optional[bool]): Boolean indicating if the user is active. Defaults to `True` if not specified by the API.
-*   `email` (Optional[str]): The user's email address.
-*   `phone` (Optional[str]): The user's phone number (e.g., "+14155552671").
-*   `attributes` (Optional[Dict[str, Any]]): A dictionary of additional custom attributes for the user.
-
-**Example:**
-```python
-# Add a new user
-new_user_payload = {
-    "unique_id": "sdk_user_123",
-    "first_name": "SDK",
-    "last_name": "TestUser",
-    "email": "sdk.testuser@example.com",
-    "active_channels": ["EMAIL"],
-    "attributes": {"source": "python_sdk_example"}
-}
-response = client.add_user(**new_user_payload)
-print(response)
-
-# Update an existing user (e.g., add a phone number)
-update_user_payload = {
-    "unique_id": "sdk_user_123", # Same unique_id
-    "phone": "+15551234567"
-}
-response = client.add_user(**update_user_payload)
-print(response)
-```
-
-### `update_user()`
-
-Updates an existing user's information.
-
-**Parameters:**
-*   `unique_id` (str): The unique identifier of the user to update. This is a required field and identifies which user to update.
-*   `first_name` (Optional[str]): The user's first name.
-*   `last_name` (Optional[str]): The user's last name.
-*   `reference_id` (Optional[str]): An external reference ID for the user.
-*   `whatsapp` (Optional[str]): The user's WhatsApp number (e.g., "+14155552671").
-*   `active_channels` (Optional[List[str]]): A list of channels the user is active on (e.g., `["EMAIL", "SMS", "WHATSAPP"]`).
-*   `active` (Optional[bool]): Boolean indicating if the user is active.
-*   `email` (Optional[str]): The user's email address.
-*   `phone` (Optional[str]): The user's phone number (e.g., "+14155552671").
-*   `attributes` (Optional[Dict[str, Any]]): A dictionary of additional custom attributes for the user.
-
-**Example:**
-```python
-# Update user information
-update_response = client.update_user(
-    unique_id="sdk_user_123",
-    first_name="Jane",
-    last_name="Smith",
-    email="jane.smith@example.com",
-    active_channels=["EMAIL", "SLACK"],
-    attributes={"department": "Engineering", "role": "Developer"}
-)
-print(update_response)
-
-# Update only specific fields
-partial_update_response = client.update_user(
-    unique_id="sdk_user_123",
-    phone="+15551234567",
-    active=True
-)
-print(partial_update_response)
-```
-
-### `delete_user()`
-
-Deletes an existing user.
-
-**Parameters:**
-*   `unique_id` (str): The unique identifier of the user to delete. This is a required field.
-
-**Returns:**
-*   `bool`: Returns `True` if the user was successfully deleted.
-
-**Example:**
-```python
-# Delete a user
-deleted = client.delete_user("sdk_user_123")
-print(f"User deleted: {deleted}")  # True
-```
-
-## Getting Started for Package Developers
-
-This guide will help you set up your environment to contribute to the `siren-ai` SDK.
+**Templates**
+- **`get_templates()`** - Retrieves a list of notification templates with optional filtering, sorting, and pagination
+- **`create_template()`** - Creates a new notification template
+- **`update_template()`** - Updates an existing notification template
+- **`delete_template()`** - Deletes an existing notification template
+- **`publish_template()`** - Publishes a template, making its latest draft version live
+- **`create_channel_templates()`** - Creates or updates channel-specific templates (EMAIL, SMS, etc.)
+- **`get_channel_templates()`** - Retrieves channel templates for a specific template version
+
+**Messaging**
+- **`send_message()`** - Sends a message using a template to a recipient via a chosen channel
+- **`get_replies()`** - Retrieves replies for a specific message ID
+- **`get_message_status()`** - Retrieves the status of a specific message (SENT, DELIVERED, FAILED, etc.)
+
+**Workflows**
+- **`trigger_workflow()`** - Triggers a workflow with given data and notification payloads
+- **`trigger_bulk_workflow()`** - Triggers a workflow in bulk for multiple recipients
+- **`schedule_workflow()`** - Schedules a workflow to run at a future time (once or recurring)
+
+**Webhooks**
+- **`configure_notifications_webhook()`** - Configures webhook URL for receiving status updates
+- **`configure_inbound_message_webhook()`** - Configures webhook URL for receiving inbound messages
+
+**Users**
+- **`add_user()`** - Creates a new user or updates existing user with given unique_id
+- **`update_user()`** - Updates an existing user's information
+- **`delete_user()`** - Deletes an existing user
+
+## Examples
+
+For detailed usage examples of all SDK methods, see the [examples](./examples/) folder.
+
+## For Package Developers
 
 ### Prerequisites
 
@@ -596,10 +134,4 @@ This will execute all tests defined in the `tests/` directory.
 
 *   Create a feature branch for your changes.
 *   Commit your changes (pre-commit hooks will run).
-*   Push your branch and open a Pull Request against the main repository branch.
-
-## Future Enhancements
-
-- Expand SDK for full Siren API endpoint coverage.
-- Implement typed response models (e.g., Pydantic) for robust data handling.
-- Introduce custom SDK exceptions for improved error diagnostics.
+*   Push your branch and open a Pull Request against the `develop` repository branch.
