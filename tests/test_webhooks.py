@@ -1,142 +1,207 @@
-"""Unit tests for the webhook module of the Siren SDK."""
+"""Unit tests for the webhooks manager using BaseManager."""
+
+from unittest.mock import Mock, patch
 
 import pytest
-import requests
-from requests_mock import Mocker as RequestsMocker
 
 from siren.client import SirenClient
-from siren.webhooks import WebhookManager
+from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.managers.webhooks import WebhooksManager
+from siren.models.webhooks import WebhookConfig
 
 API_KEY = "test_api_key"
 BASE_URL = "https://api.dev.trysiren.io"
 WEBHOOK_URL = "https://example.com/webhook"
 
 
-class TestWebhookManager:
-    """Tests for the WebhookManager class."""
+def mock_response(status_code: int, json_data: dict = None):
+    """Helper function to create a mock HTTP response."""
+    mock_resp = Mock()
+    mock_resp.status_code = status_code
+    mock_resp.json.return_value = json_data if json_data is not None else {}
+    return mock_resp
 
-    def test_configure_notifications_webhook_success(
-        self, requests_mock: RequestsMocker
-    ):
+
+class TestWebhooksManager:
+    """Tests for the WebhooksManager class."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.manager = WebhooksManager(api_key=API_KEY, base_url=BASE_URL)
+
+    @patch("siren.managers.base.requests.request")
+    def test_configure_notifications_webhook_success(self, mock_request):
         """Test successful configuration of notifications webhook."""
-        manager = WebhookManager(api_key=API_KEY, base_url=BASE_URL)
-        expected_response = {
-            "data": {"id": "wh_123", "webhookConfig": {"url": WEBHOOK_URL}}
+        # Mock successful API response
+        mock_api_response = {
+            "data": {
+                "id": "wh_123",
+                "webhookConfig": {
+                    "url": WEBHOOK_URL,
+                    "headers": [],
+                    "verificationKey": "test_key_123",
+                },
+            },
+            "error": None,
         }
-        requests_mock.put(
-            f"{BASE_URL}/api/v1/public/webhooks",
-            json=expected_response,
-            status_code=200,
-        )
-        response = manager.configure_notifications_webhook(url=WEBHOOK_URL)
-        assert response == expected_response
-        assert requests_mock.last_request is not None
-        assert requests_mock.last_request.json() == {
-            "webhookConfig": {"url": WEBHOOK_URL}
-        }
+        mock_request.return_value = mock_response(200, mock_api_response)
 
-    def test_configure_inbound_message_webhook_success(
-        self, requests_mock: RequestsMocker
-    ):
+        # Call the method
+        result = self.manager.configure_notifications_webhook(url=WEBHOOK_URL)
+
+        # Verify result is WebhookConfig object
+        assert isinstance(result, WebhookConfig)
+        assert result.url == WEBHOOK_URL
+        assert result.verification_key == "test_key_123"
+        assert result.headers == []
+
+        # Verify request was made correctly with BaseManager
+        mock_request.assert_called_once_with(
+            method="PUT",
+            url=f"{BASE_URL}/api/v1/public/webhooks",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"webhookConfig": {"url": WEBHOOK_URL}},
+            params=None,
+            timeout=10,
+        )
+
+    @patch("siren.managers.base.requests.request")
+    def test_configure_inbound_message_webhook_success(self, mock_request):
         """Test successful configuration of inbound message webhook."""
-        manager = WebhookManager(api_key=API_KEY, base_url=BASE_URL)
-        expected_response = {
-            "data": {"id": "wh_456", "inboundWebhookConfig": {"url": WEBHOOK_URL}}
+        # Mock successful API response
+        mock_api_response = {
+            "data": {
+                "id": "wh_456",
+                "inboundWebhookConfig": {
+                    "url": WEBHOOK_URL,
+                    "headers": [],
+                    "verificationKey": "test_key_456",
+                },
+            },
+            "error": None,
         }
-        requests_mock.put(
-            f"{BASE_URL}/api/v1/public/webhooks",
-            json=expected_response,
-            status_code=200,
+        mock_request.return_value = mock_response(200, mock_api_response)
+
+        # Call the method
+        result = self.manager.configure_inbound_message_webhook(url=WEBHOOK_URL)
+
+        # Verify result is WebhookConfig object
+        assert isinstance(result, WebhookConfig)
+        assert result.url == WEBHOOK_URL
+        assert result.verification_key == "test_key_456"
+        assert result.headers == []
+
+        # Verify request was made correctly with BaseManager
+        mock_request.assert_called_once_with(
+            method="PUT",
+            url=f"{BASE_URL}/api/v1/public/webhooks",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"inboundWebhookConfig": {"url": WEBHOOK_URL}},
+            params=None,
+            timeout=10,
         )
-        response = manager.configure_inbound_message_webhook(url=WEBHOOK_URL)
-        assert response == expected_response
-        assert requests_mock.last_request is not None
-        assert requests_mock.last_request.json() == {
-            "inboundWebhookConfig": {"url": WEBHOOK_URL}
+
+    @pytest.mark.parametrize(
+        "method_name,config_key",
+        [
+            ("configure_notifications_webhook", "webhookConfig"),
+            ("configure_inbound_message_webhook", "inboundWebhookConfig"),
+        ],
+    )
+    @patch("siren.managers.base.requests.request")
+    def test_webhook_api_error(self, mock_request, method_name: str, config_key: str):
+        """Test API error during webhook configuration."""
+        # Mock API error response
+        mock_api_error = {
+            "data": None,
+            "error": {
+                "errorCode": "INVALID_REQUEST",
+                "message": "Invalid webhook URL format",
+            },
         }
+        mock_request.return_value = mock_response(400, mock_api_error)
 
-    @pytest.mark.parametrize(
-        "method_name",
-        ["configure_notifications_webhook", "configure_inbound_message_webhook"],
-    )
-    def test_webhook_http_error_json_response(
-        self, requests_mock: RequestsMocker, method_name: str
-    ):
-        """Test HTTP error with JSON response during webhook configuration."""
-        manager = WebhookManager(api_key=API_KEY, base_url=BASE_URL)
-        error_response = {"error": "Bad Request", "message": "Invalid URL"}
-        requests_mock.put(
-            f"{BASE_URL}/api/v1/public/webhooks",
-            json=error_response,
-            status_code=400,
-        )
-        method_to_call = getattr(manager, method_name)
-        response = method_to_call(url=WEBHOOK_URL)
-        assert response == error_response
+        method_to_call = getattr(self.manager, method_name)
 
-    @pytest.mark.parametrize(
-        "method_name",
-        ["configure_notifications_webhook", "configure_inbound_message_webhook"],
-    )
-    def test_webhook_http_error_no_json_response(
-        self, requests_mock: RequestsMocker, method_name: str
-    ):
-        """Test HTTP error without JSON response during webhook configuration."""
-        manager = WebhookManager(api_key=API_KEY, base_url=BASE_URL)
-        requests_mock.put(
-            f"{BASE_URL}/api/v1/public/webhooks",
-            text="Server Error",
-            status_code=500,
-        )
-        method_to_call = getattr(manager, method_name)
-        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
-            method_to_call(url=WEBHOOK_URL)
-        assert excinfo.value.response.status_code == 500
-        assert excinfo.value.response.text == "Server Error"
-
-    @pytest.mark.parametrize(
-        "method_name",
-        ["configure_notifications_webhook", "configure_inbound_message_webhook"],
-    )
-    def test_webhook_request_exception(
-        self, requests_mock: RequestsMocker, method_name: str
-    ):
-        """Test requests.exceptions.RequestException during webhook configuration."""
-        manager = WebhookManager(api_key=API_KEY, base_url=BASE_URL)
-        requests_mock.put(
-            f"{BASE_URL}/api/v1/public/webhooks",
-            exc=requests.exceptions.Timeout("Connection timed out"),
-        )
-        method_to_call = getattr(manager, method_name)
-        with pytest.raises(requests.exceptions.RequestException):
+        with pytest.raises(SirenAPIError) as exc_info:
             method_to_call(url=WEBHOOK_URL)
 
+        assert exc_info.value.error_code == "INVALID_REQUEST"
+        assert "Invalid webhook URL format" in exc_info.value.api_message
 
-def test_siren_client_configure_notifications_webhook(mocker):
-    """Test SirenClient.configure_notifications_webhook calls WebhookManager correctly."""
+        # Verify correct payload was sent
+        expected_json = {config_key: {"url": WEBHOOK_URL}}
+        mock_request.assert_called_once_with(
+            method="PUT",
+            url=f"{BASE_URL}/api/v1/public/webhooks",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=expected_json,
+            params=None,
+            timeout=10,
+        )
+
+    @pytest.mark.parametrize(
+        "method_name",
+        ["configure_notifications_webhook", "configure_inbound_message_webhook"],
+    )
+    @patch("siren.managers.base.requests.request")
+    def test_webhook_network_error(self, mock_request, method_name: str):
+        """Test network error during webhook configuration."""
+        from requests.exceptions import ConnectionError
+
+        # Mock network error
+        mock_request.side_effect = ConnectionError("Connection failed")
+
+        method_to_call = getattr(self.manager, method_name)
+
+        with pytest.raises(SirenSDKError) as exc_info:
+            method_to_call(url=WEBHOOK_URL)
+
+        assert "Connection failed" in exc_info.value.message
+
+
+def test_siren_client_configure_notifications_webhook():
+    """Test SirenClient.configure_notifications_webhook calls WebhooksManager correctly."""
     client = SirenClient(api_key=API_KEY)
-    mock_webhook_manager_method = mocker.patch.object(
+
+    with patch.object(
         client._webhooks, "configure_notifications_webhook"
-    )
-    expected_response = {"data": "success"}
-    mock_webhook_manager_method.return_value = expected_response
+    ) as mock_method:
+        # Create WebhookConfig using model_validate to handle aliases properly
+        mock_config = WebhookConfig.model_validate(
+            {"url": WEBHOOK_URL, "headers": [], "verificationKey": "test_key_123"}
+        )
+        mock_method.return_value = mock_config
 
-    response = client.configure_notifications_webhook(url=WEBHOOK_URL)
+        result = client.configure_notifications_webhook(url=WEBHOOK_URL)
 
-    mock_webhook_manager_method.assert_called_once_with(url=WEBHOOK_URL)
-    assert response == expected_response
+        mock_method.assert_called_once_with(url=WEBHOOK_URL)
+        assert result == mock_config
 
 
-def test_siren_client_configure_inbound_message_webhook(mocker):
-    """Test SirenClient.configure_inbound_message_webhook calls WebhookManager correctly."""
+def test_siren_client_configure_inbound_message_webhook():
+    """Test SirenClient.configure_inbound_message_webhook calls WebhooksManager correctly."""
     client = SirenClient(api_key=API_KEY)
-    mock_webhook_manager_method = mocker.patch.object(
+
+    with patch.object(
         client._webhooks, "configure_inbound_message_webhook"
-    )
-    expected_response = {"data": "success_inbound"}
-    mock_webhook_manager_method.return_value = expected_response
+    ) as mock_method:
+        # Create WebhookConfig using model_validate to handle aliases properly
+        mock_config = WebhookConfig.model_validate(
+            {"url": WEBHOOK_URL, "headers": [], "verificationKey": "test_key_456"}
+        )
+        mock_method.return_value = mock_config
 
-    response = client.configure_inbound_message_webhook(url=WEBHOOK_URL)
+        result = client.configure_inbound_message_webhook(url=WEBHOOK_URL)
 
-    mock_webhook_manager_method.assert_called_once_with(url=WEBHOOK_URL)
-    assert response == expected_response
+        mock_method.assert_called_once_with(url=WEBHOOK_URL)
+        assert result == mock_config

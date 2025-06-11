@@ -183,10 +183,10 @@ if __name__ == "__main__":
 
     siren_client = SirenClient(api_key=api_key)
 
-    # run_get_templates_example(siren_client)
+    run_get_templates_example(siren_client)
     # run_create_template_example(siren_client)
     # run_update_template_example(siren_client)
     # run_delete_template_example(siren_client)
     # run_publish_template_example(siren_client)
     # run_create_channel_templates_example(siren_client)
-    run_get_channel_templates_example(siren_client)
+    # run_get_channel_templates_example(siren_client)

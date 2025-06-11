@@ -6,10 +6,11 @@ from pydantic import EmailStr
 
 from .managers.messaging import MessagingManager
 from .managers.users import UsersManager
+from .managers.webhooks import WebhooksManager
 from .models.messaging import ReplyData
 from .models.user import User
+from .models.webhooks import WebhookConfig
 from .templates import TemplatesManager
-from .webhooks import WebhookManager
 from .workflows import WorkflowsManager
 
 
@@ -33,7 +34,7 @@ class SirenClient:
             api_key=self.api_key,
             base_url=self.BASE_API_URL,  # Note: WorkflowsManager uses /api/v2 internally
         )
-        self._webhooks = WebhookManager(
+        self._webhooks = WebhooksManager(
             api_key=self.api_key, base_url=self.BASE_API_URL
         )
         self._messaging = MessagingManager(
@@ -414,7 +415,7 @@ class SirenClient:
 
     # Webhook Management
 
-    def configure_notifications_webhook(self, url: str) -> Dict[str, Any]:
+    def configure_notifications_webhook(self, url: str) -> WebhookConfig:
         """
         Configure the webhook for outgoing notifications.
 
@@ -422,11 +423,11 @@ class SirenClient:
             url: The URL to be configured for the notifications webhook.
 
         Returns:
-            A dictionary containing the API response.
+            The webhook configuration object with URL, headers, and verification key.
         """
         return self._webhooks.configure_notifications_webhook(url=url)
 
-    def configure_inbound_message_webhook(self, url: str) -> Dict[str, Any]:
+    def configure_inbound_message_webhook(self, url: str) -> WebhookConfig:
         """
         Configure the webhook for inbound messages.
 
@@ -434,6 +435,6 @@ class SirenClient:
             url: The URL to be configured for the inbound message webhook.
 
         Returns:
-            A dictionary containing the API response.
+            The webhook configuration object with URL, headers, and verification key.
         """
         return self._webhooks.configure_inbound_message_webhook(url=url)
