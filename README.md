@@ -8,8 +8,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
 - [Basic Usage](#basic-usage)
 - [SDK Methods](#sdk-methods)
 - [Examples](#examples)
-- [For Package Developers](#getting-started-for-package-developers)
-- [Future Enhancements](#future-enhancements)
+- [For Package Developers](#for-package-developers)
 
 ## Installation
 
