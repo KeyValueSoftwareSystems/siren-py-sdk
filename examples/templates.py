@@ -1,4 +1,4 @@
-"""Example script demonstrating template methods using SirenClient."""
+"""Example script demonstrating template and channel template operations."""
 
 import os
 import sys
@@ -10,7 +10,61 @@ from siren.exceptions import SirenAPIError, SirenSDKError
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
-def get_templates_example(client: SirenClient) -> None:
+def create_template_example(client: SirenClient) -> str:
+    """Example of creating a template."""
+    try:
+        created = client.template.create(
+            name="Welcome_Email_Example",
+            description="A welcome email template",
+            tag_names=["welcome"],
+            variables=[{"name": "user_name", "defaultValue": "Guest"}],
+        )
+        print(f"Created template: {created.template_id}")
+        return created.template_id
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
+def create_channel_templates_example(client: SirenClient, template_id: str):
+    """Example of creating channel templates."""
+    try:
+        channel_templates = client.channel_template.create(
+            template_id=template_id,
+            EMAIL={
+                "subject": "Welcome {{user_name}}!",
+                "body": "<h1>Hello {{user_name}}!</h1>",
+                "channel": "EMAIL",
+                "isRawHTML": True,
+            },
+            SMS={"body": "Hi {{user_name}}! Welcome aboard!", "channel": "SMS"},
+        )
+        print(f"Created {len(channel_templates)} channel templates")
+        return channel_templates[0].template_version_id if channel_templates else None
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
+def update_template_example(client: SirenClient, template_id: str):
+    """Example of updating a template."""
+    try:
+        updated = client.template.update(
+            template_id,
+            name="Updated_Welcome_Template",
+            description="Updated welcome email template",
+            tag_names=["welcome", "updated"],
+        )
+        print(f"Updated template: {updated.name}")
+    except SirenAPIError as e:
+        print(f"API Error: {e.error_code} - {e.api_message}")
+    except SirenSDKError as e:
+        print(f"SDK Error: {e.message}")
+
+
+def get_templates_example(client: SirenClient):
     """Example of getting templates."""
     try:
         templates = client.template.get(page=0, size=2)
@@ -21,48 +75,11 @@ def get_templates_example(client: SirenClient) -> None:
         print(f"SDK Error: {e.message}")
 
 
-def create_template_example(client: SirenClient) -> str:
-    """Example of creating a template."""
-    import time
-
-    timestamp = int(time.time())
-
+def get_channel_templates_example(client: SirenClient, version_id: str):
+    """Example of getting channel templates."""
     try:
-        created = client.template.create(
-            name=f"SDK_Example_Template_{timestamp}",
-            description="Test template from SDK",
-            tag_names=["sdk-test", "example"],
-            variables=[{"name": "user_name", "defaultValue": "Guest"}],
-            configurations={
-                "EMAIL": {
-                    "subject": "Hello {{user_name}}!",
-                    "channel": "EMAIL",
-                    "body": "<p>Welcome {{user_name}}!</p>",
-                    "isRawHTML": True,
-                    "isPlainText": False,
-                }
-            },
-        )
-        print(f"Created template: {created.template_id}")
-        return created.template_id
-    except SirenAPIError as e:
-        print(f"API Error: {e.error_code} - {e.api_message}")
-        return None
-    except SirenSDKError as e:
-        print(f"SDK Error: {e.message}")
-        return None
-
-
-def update_template_example(client: SirenClient, template_id: str) -> None:
-    """Example of updating a template."""
-    try:
-        updated = client.template.update(
-            template_id,
-            name="Updated_SDK_Example",
-            description="Updated description from SDK",
-            tag_names=["updated", "sdk-test"],
-        )
-        print(f"Updated template: {updated.id}")
+        channel_templates = client.channel_template.get(version_id=version_id)
+        print(f"Retrieved {len(channel_templates)} channel templates")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
     except SirenSDKError as e:
@@ -73,61 +90,19 @@ def publish_template_example(client: SirenClient, template_id: str):
     """Example of publishing a template."""
     try:
         published = client.template.publish(template_id)
-        print(f"Published template: {published.id}")
+        print(f"Published template: {published.name}")
         return published
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
-        return None
-    except SirenSDKError as e:
-        print(f"SDK Error: {e.message}")
-        return None
-
-
-def create_channel_templates_example(client: SirenClient, template_id: str) -> None:
-    """Example of creating channel templates for a template."""
-    try:
-        result = client.template.create_channel_templates(
-            template_id,
-            SMS={
-                "body": "Hello {{user_name}}! This is from SDK.",
-                "channel": "SMS",
-                "isFlash": False,
-                "isUnicode": False,
-            },
-            EMAIL={
-                "subject": "Welcome {{user_name}}!",
-                "channel": "EMAIL",
-                "body": "<p>Hello {{user_name}}, welcome from SDK!</p>",
-                "isRawHTML": True,
-                "isPlainText": False,
-            },
-        )
-        print(f"Created {len(result)} channel templates")
-    except SirenAPIError as e:
-        print(f"API Error: {e.error_code} - {e.api_message}")
     except SirenSDKError as e:
         print(f"SDK Error: {e.message}")
 
 
-def get_channel_templates_example(client: SirenClient, version_id: str) -> None:
-    """Example of getting channel templates for a template version."""
-    try:
-        result = client.template.get_channel_templates(version_id, page=0, size=5)
-        print(f"Retrieved {len(result)} channel templates")
-    except SirenAPIError as e:
-        print(f"API Error: {e.error_code} - {e.api_message}")
-    except SirenSDKError as e:
-        print(f"SDK Error: {e.message}")
-
-
-def delete_template_example(client: SirenClient, template_id: str) -> None:
+def delete_template_example(client: SirenClient, template_id: str):
     """Example of deleting a template."""
     try:
-        result = client.template.delete(template_id)
-        if result:
-            print(f"Successfully deleted template: {template_id}")
-        else:
-            print(f"Failed to delete template: {template_id}")
+        success = client.template.delete(template_id)
+        print(f"Deleted template: {success}")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
     except SirenSDKError as e:
@@ -140,13 +115,13 @@ if __name__ == "__main__":
         print("Error: SIREN_API_KEY environment variable not set.")
         sys.exit(1)
 
-    client = SirenClient(api_key)
+    client = SirenClient(api_key=api_key)
 
     get_templates_example(client)
     template_id = create_template_example(client)
     if template_id:
         update_template_example(client, template_id)
-        create_channel_templates_example(client, template_id)
+        version_id = create_channel_templates_example(client, template_id)
         published = publish_template_example(client, template_id)
         if published and published.published_version:
             get_channel_templates_example(client, published.published_version.id)

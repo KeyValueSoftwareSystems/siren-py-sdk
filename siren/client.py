@@ -3,6 +3,7 @@
 import os
 from typing import Literal, Optional
 
+from .clients.channel_templates import ChannelTemplateClient
 from .clients.messaging import MessageClient
 from .clients.templates import TemplateClient
 from .clients.users import UserClient
@@ -43,6 +44,9 @@ class SirenClient:
         self._template_client = TemplateClient(
             api_key=self.api_key, base_url=self.base_url
         )
+        self._channel_template_client = ChannelTemplateClient(
+            api_key=self.api_key, base_url=self.base_url
+        )
         self._workflow_client = WorkflowClient(
             api_key=self.api_key, base_url=self.base_url
         )
@@ -58,6 +62,11 @@ class SirenClient:
     def template(self) -> TemplateClient:
         """Access to template operations."""
         return self._template_client
+
+    @property
+    def channel_template(self) -> ChannelTemplateClient:
+        """Access to channel template operations."""
+        return self._channel_template_client
 
     @property
     def workflow(self) -> WorkflowClient:
