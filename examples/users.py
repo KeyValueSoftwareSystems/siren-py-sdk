@@ -22,7 +22,7 @@ def add_user_example(client: SirenClient) -> str:
     }
 
     try:
-        created_user = client.add_user(**user)
+        created_user = client.user.add(**user)
         print(f"Created user: {created_user.id}")
         return created_user.unique_id
     except SirenAPIError as e:
@@ -34,7 +34,7 @@ def add_user_example(client: SirenClient) -> str:
 def update_user_example(client: SirenClient, unique_id: str) -> None:
     """Example of updating a user."""
     try:
-        updated_user = client.update_user(
+        updated_user = client.user.update(
             unique_id,
             first_name="Jane",
             last_name="Smith",
@@ -51,7 +51,7 @@ def update_user_example(client: SirenClient, unique_id: str) -> None:
 def delete_user_example(client: SirenClient, unique_id: str) -> None:
     """Example of deleting a user."""
     try:
-        deleted = client.delete_user(unique_id)
+        deleted = client.user.delete(unique_id)
         print(f"Deleted user: {deleted}")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")

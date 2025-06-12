@@ -1,4 +1,4 @@
-"""Manages messaging-related API interactions for the Siren SDK."""
+"""Messaging client for the Siren SDK."""
 
 from typing import Any, Dict, List, Optional
 
@@ -9,13 +9,13 @@ from ..models.messaging import (
     SendMessageRequest,
     SendMessageResponse,
 )
-from .base import BaseManager
+from .base import BaseClient
 
 
-class MessagingManager(BaseManager):
-    """Manages direct message sending operations."""
+class MessageClient(BaseClient):
+    """Client for direct message operations."""
 
-    def send_message(
+    def send(
         self,
         template_name: str,
         channel: str,
@@ -56,7 +56,7 @@ class MessagingManager(BaseManager):
         )
         return response.message_id
 
-    def get_message_status(self, message_id: str) -> str:
+    def get_status(self, message_id: str) -> str:
         """Retrieve the status of a specific message.
 
         Args:

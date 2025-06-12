@@ -26,7 +26,7 @@ from siren import SirenClient
 client = SirenClient(api_key="YOUR_SIREN_API_KEY")
 
 # Send a message
-message_id = client.send_message(
+message_id = client.message.send(
     template_name="welcome_email",
     channel="EMAIL",
     recipient_type="direct",
@@ -35,41 +35,43 @@ message_id = client.send_message(
 )
 print(f"Message sent! ID: {message_id}")
 
-# to specify env
+# To specify env
 client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
 ```
 
 ## SDK Methods
 
-The Siren-AI Python SDK provides an interface to interact with the Siren API.
+The Siren-AI Python SDK provides a clean, namespaced interface to interact with the Siren API.
 
-**Templates**
-- **`get_templates()`** - Retrieves a list of notification templates with optional filtering, sorting, and pagination
-- **`create_template()`** - Creates a new notification template
-- **`update_template()`** - Updates an existing notification template
-- **`delete_template()`** - Deletes an existing notification template
-- **`publish_template()`** - Publishes a template, making its latest draft version live
-- **`create_channel_templates()`** - Creates or updates channel-specific templates (EMAIL, SMS, etc.)
-- **`get_channel_templates()`** - Retrieves channel templates for a specific template version
+**Templates** (`client.template.*`)
+- **`client.template.get()`** - Retrieves a list of notification templates with optional filtering, sorting, and pagination
+- **`client.template.create()`** - Creates a new notification template
+- **`client.template.update()`** - Updates an existing notification template
+- **`client.template.delete()`** - Deletes an existing notification template
+- **`client.template.publish()`** - Publishes a template, making its latest draft version live
 
-**Messaging**
-- **`send_message()`** - Sends a message using a template to a recipient via a chosen channel
-- **`get_replies()`** - Retrieves replies for a specific message ID
-- **`get_message_status()`** - Retrieves the status of a specific message (SENT, DELIVERED, FAILED, etc.)
+**Channel Templates** (`client.channel_template.*`)
+- **`client.channel_template.create()`** - Creates or updates channel-specific templates (EMAIL, SMS, etc.)
+- **`client.channel_template.get()`** - Retrieves channel templates for a specific template version
 
-**Workflows**
-- **`trigger_workflow()`** - Triggers a workflow with given data and notification payloads
-- **`trigger_bulk_workflow()`** - Triggers a workflow in bulk for multiple recipients
-- **`schedule_workflow()`** - Schedules a workflow to run at a future time (once or recurring)
+**Messaging** (`client.message.*`)
+- **`client.message.send()`** - Sends a message using a template to a recipient via a chosen channel
+- **`client.message.get_replies()`** - Retrieves replies for a specific message ID
+- **`client.message.get_status()`** - Retrieves the status of a specific message (SENT, DELIVERED, FAILED, etc.)
 
-**Webhooks**
-- **`configure_notifications_webhook()`** - Configures webhook URL for receiving status updates
-- **`configure_inbound_message_webhook()`** - Configures webhook URL for receiving inbound messages
+**Workflows** (`client.workflow.*`)
+- **`client.workflow.trigger()`** - Triggers a workflow with given data and notification payloads
+- **`client.workflow.trigger_bulk()`** - Triggers a workflow in bulk for multiple recipients
+- **`client.workflow.schedule()`** - Schedules a workflow to run at a future time (once or recurring)
 
-**Users**
-- **`add_user()`** - Creates a new user or updates existing user with given unique_id
-- **`update_user()`** - Updates an existing user's information
-- **`delete_user()`** - Deletes an existing user
+**Webhooks** (`client.webhook.*`)
+- **`client.webhook.configure_notifications()`** - Configures webhook URL for receiving status updates
+- **`client.webhook.configure_inbound()`** - Configures webhook URL for receiving inbound messages
+
+**Users** (`client.user.*`)
+- **`client.user.add()`** - Creates a new user or updates existing user with given unique_id
+- **`client.user.update()`** - Updates an existing user's information
+- **`client.user.delete()`** - Deletes an existing user
 
 ## Examples
 

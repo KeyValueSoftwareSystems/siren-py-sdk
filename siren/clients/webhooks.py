@@ -1,4 +1,4 @@
-"""Manages webhook-related API interactions for the Siren SDK."""
+"""Webhook client for the Siren API."""
 
 from ..models.webhooks import (
     InboundWebhookRequest,
@@ -6,13 +6,13 @@ from ..models.webhooks import (
     WebhookConfig,
     WebhookResponse,
 )
-from .base import BaseManager
+from .base import BaseClient
 
 
-class WebhooksManager(BaseManager):
-    """Manages webhook configuration operations."""
+class WebhookClient(BaseClient):
+    """Client for webhook configuration operations."""
 
-    def configure_notifications_webhook(self, url: str) -> WebhookConfig:
+    def configure_notifications(self, url: str) -> WebhookConfig:
         """Configure the webhook for notifications.
 
         Args:
@@ -36,7 +36,7 @@ class WebhooksManager(BaseManager):
         )
         return response.webhook_config
 
-    def configure_inbound_message_webhook(self, url: str) -> WebhookConfig:
+    def configure_inbound(self, url: str) -> WebhookConfig:
         """Configure the webhook for inbound messages.
 
         Args:

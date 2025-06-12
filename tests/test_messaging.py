@@ -1,26 +1,26 @@
-"""Unit tests for the updated messaging manager using BaseManager."""
+"""Unit tests for the messaging client using BaseClient."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 
+from siren.clients.messaging import MessageClient
 from siren.exceptions import SirenAPIError, SirenSDKError
-from siren.managers.messaging import MessagingManager
 
 API_KEY = "test_api_key"
 BASE_URL = "https://api.dev.trysiren.io"
 
 
-class TestMessagingManager:
-    """Tests for MessagingManager with BaseManager."""
+class TestMessageClient:
+    """Tests for MessageClient with BaseClient."""
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.manager = MessagingManager(api_key=API_KEY, base_url=BASE_URL)
+        self.client = MessageClient(api_key=API_KEY, base_url=BASE_URL)
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_send_message_success(self, mock_request):
-        """Test successful message sending with new BaseManager."""
+        """Test successful message sending with new BaseClient."""
         # Mock successful API response
         mock_response = Mock()
         mock_response.status_code = 200
@@ -31,7 +31,7 @@ class TestMessagingManager:
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.manager.send_message(
+        result = self.client.send(
             template_name="test_template",
             channel="SLACK",
             recipient_type="direct",
@@ -56,7 +56,7 @@ class TestMessagingManager:
         assert payload["templateVariables"]["name"] == "John"
         assert payload["template"]["name"] == "test_template"
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_message_status_success(self, mock_request):
         """Test successful message status retrieval."""
         # Mock successful API response
@@ -69,12 +69,12 @@ class TestMessagingManager:
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.manager.get_message_status("test_msg_123")
+        result = self.client.get_status("test_msg_123")
 
         # Verify result
         assert result == "DELIVERED"
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_replies_success(self, mock_request):
         """Test successful replies retrieval."""
         # Mock successful API response
@@ -100,7 +100,7 @@ class TestMessagingManager:
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.manager.get_replies("test_msg_123")
+        result = self.client.get_replies("test_msg_123")
 
         # Verify result
         assert len(result) == 2
@@ -109,7 +109,7 @@ class TestMessagingManager:
         assert result[1].text == "Reply 2"
         assert result[1].user == "U456"
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_api_error_handling(self, mock_request):
         """Test that API errors are properly handled."""
         # Mock API error response
@@ -123,7 +123,7 @@ class TestMessagingManager:
 
         # Should raise SirenAPIError
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.send_message(
+            self.client.send(
                 template_name="nonexistent",
                 channel="SLACK",
                 recipient_type="direct",
@@ -133,7 +133,7 @@ class TestMessagingManager:
         assert exc_info.value.error_code == "NOT_FOUND"
         assert "Template not found" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_send_message_without_template_variables(self, mock_request):
         """Test sending message without template variables."""
         # Mock successful API response
@@ -146,7 +146,7 @@ class TestMessagingManager:
         mock_request.return_value = mock_response
 
         # Call the method without template_variables
-        result = self.manager.send_message(
+        result = self.client.send(
             template_name="simple_template",
             channel="EMAIL",
             recipient_type="direct",
@@ -160,7 +160,7 @@ class TestMessagingManager:
         payload = mock_request.call_args[1]["json"]
         assert "templateVariables" not in payload
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_replies_empty_list(self, mock_request):
         """Test get_replies when no replies exist."""
         # Mock successful API response with empty list
@@ -170,13 +170,13 @@ class TestMessagingManager:
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.manager.get_replies("test_msg_no_replies")
+        result = self.client.get_replies("test_msg_no_replies")
 
         # Verify result
         assert result == []
         assert len(result) == 0
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_network_error_handling(self, mock_request):
         """Test handling of network errors."""
         # Mock network error
@@ -184,7 +184,7 @@ class TestMessagingManager:
 
         # Should raise SirenSDKError
         with pytest.raises(SirenSDKError) as exc_info:
-            self.manager.send_message(
+            self.client.send(
                 template_name="test",
                 channel="SLACK",
                 recipient_type="direct",

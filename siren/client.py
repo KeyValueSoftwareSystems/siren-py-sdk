@@ -1,24 +1,14 @@
 """Siren API client implementation."""
 
 import os
-from typing import Any, Dict, List, Literal, Optional
+from typing import Literal, Optional
 
-from pydantic import EmailStr
-
-from .managers.messaging import MessagingManager
-from .managers.templates import TemplatesManager
-from .managers.users import UsersManager
-from .managers.webhooks import WebhooksManager
-from .managers.workflows import WorkflowsManager
-from .models.messaging import ReplyData
-from .models.templates import ChannelTemplate, CreatedTemplate, Template
-from .models.user import User
-from .models.webhooks import WebhookConfig
-from .models.workflows import (
-    BulkWorkflowExecutionData,
-    ScheduleData,
-    WorkflowExecutionData,
-)
+from .clients.channel_templates import ChannelTemplateClient
+from .clients.messaging import MessageClient
+from .clients.templates import TemplateClient
+from .clients.users import UserClient
+from .clients.webhooks import WebhookClient
+from .clients.workflows import WorkflowClient
 
 
 class SirenClient:
@@ -51,402 +41,49 @@ class SirenClient:
 
         self.env = env
         self.base_url = self.API_URLS[env]
-        self._templates = TemplatesManager(api_key=self.api_key, base_url=self.base_url)
-        self._workflows = WorkflowsManager(api_key=self.api_key, base_url=self.base_url)
-        self._webhooks = WebhooksManager(api_key=self.api_key, base_url=self.base_url)
-        self._messaging = MessagingManager(api_key=self.api_key, base_url=self.base_url)
-        self._users = UsersManager(api_key=self.api_key, base_url=self.base_url)
-
-    def get_templates(
-        self,
-        tag_names: Optional[str] = None,
-        search: Optional[str] = None,
-        sort: Optional[str] = None,
-        page: Optional[int] = None,
-        size: Optional[int] = None,
-    ) -> List[Template]:
-        """Fetch templates.
-
-        Args:
-            tag_names: Filter by tag names.
-            search: Search by field.
-            sort: Sort by field.
-            page: Page number.
-            size: Page size.
-
-        Returns:
-            List[Template]: A list of Template models.
-        """
-        return self._templates.get_templates(
-            tag_names=tag_names,
-            search=search,
-            sort=sort,
-            page=page,
-            size=size,
+        self._template_client = TemplateClient(
+            api_key=self.api_key, base_url=self.base_url
+        )
+        self._channel_template_client = ChannelTemplateClient(
+            api_key=self.api_key, base_url=self.base_url
+        )
+        self._workflow_client = WorkflowClient(
+            api_key=self.api_key, base_url=self.base_url
+        )
+        self._message_client = MessageClient(
+            api_key=self.api_key, base_url=self.base_url
+        )
+        self._user_client = UserClient(api_key=self.api_key, base_url=self.base_url)
+        self._webhook_client = WebhookClient(
+            api_key=self.api_key, base_url=self.base_url
         )
 
-    def create_template(self, **template_data) -> CreatedTemplate:
-        """Create a new template.
+    @property
+    def template(self) -> TemplateClient:
+        """Access to template operations."""
+        return self._template_client
 
-        Args:
-            **template_data: Template attributes (name, description, tag_names, variables, configurations).
+    @property
+    def channel_template(self) -> ChannelTemplateClient:
+        """Access to channel template operations."""
+        return self._channel_template_client
 
-        Returns:
-            CreatedTemplate: A CreatedTemplate model representing the created template.
-        """
-        return self._templates.create_template(**template_data)
+    @property
+    def workflow(self) -> WorkflowClient:
+        """Access to workflow operations."""
+        return self._workflow_client
 
-    def update_template(self, template_id: str, **template_data) -> Template:
-        """Update an existing template.
+    @property
+    def message(self) -> MessageClient:
+        """Access to message operations."""
+        return self._message_client
 
-        Args:
-            template_id: The ID of the template to update.
-            **template_data: Template attributes to update (name, description, tag_names, variables).
+    @property
+    def user(self) -> UserClient:
+        """Access to user operations."""
+        return self._user_client
 
-        Returns:
-            Template: A Template model representing the updated template.
-        """
-        return self._templates.update_template(template_id, **template_data)
-
-    def delete_template(self, template_id: str) -> bool:
-        """Delete an existing template.
-
-        Args:
-            template_id: The ID of the template to delete.
-
-        Returns:
-            bool: True if deletion was successful.
-        """
-        return self._templates.delete_template(template_id)
-
-    def publish_template(self, template_id: str) -> Template:
-        """Publish an existing template.
-
-        Args:
-            template_id: The ID of the template to publish.
-
-        Returns:
-            Template: A Template model representing the published template.
-        """
-        return self._templates.publish_template(template_id)
-
-    def create_channel_templates(
-        self, template_id: str, **channel_templates_data
-    ) -> List[ChannelTemplate]:
-        """Create or update channel templates for a specific template.
-
-        Args:
-            template_id: The ID of the template for which to create channel templates.
-            **channel_templates_data: Channel templates configuration where keys are
-                                    channel names (e.g., "EMAIL", "SMS") and values
-                                    are the channel-specific template objects.
-
-        Returns:
-            List[ChannelTemplate]: List of created channel template objects.
-        """
-        return self._templates.create_channel_templates(
-            template_id, **channel_templates_data
-        )
-
-    def get_channel_templates(
-        self,
-        version_id: str,
-        channel: Optional[str] = None,
-        search: Optional[str] = None,
-        sort: Optional[str] = None,
-        page: Optional[int] = None,
-        size: Optional[int] = None,
-    ) -> List[ChannelTemplate]:
-        """Get channel templates for a specific template version.
-
-        Args:
-            version_id: The ID of the template version for which to fetch channel templates.
-            channel: Filter by channel type (e.g., "EMAIL", "SMS").
-            search: Search by field.
-            sort: Sort by field.
-            page: Page number.
-            size: Page size.
-
-        Returns:
-            List[ChannelTemplate]: List of channel template objects.
-        """
-        return self._templates.get_channel_templates(
-            version_id=version_id,
-            channel=channel,
-            search=search,
-            sort=sort,
-            page=page,
-            size=size,
-        )
-
-    def trigger_workflow(
-        self,
-        workflow_name: str,
-        data: Optional[Dict[str, Any]] = None,
-        notify: Optional[Dict[str, Any]] = None,
-    ) -> WorkflowExecutionData:
-        """Triggers a workflow with the given name and payload.
-
-        Args:
-            workflow_name: The name of the workflow to execute.
-            data: Common data for all workflow executions.
-            notify: Specific data for this workflow execution.
-
-        Returns:
-            WorkflowExecutionData: Workflow execution details.
-        """
-        return self._workflows.trigger_workflow(
-            workflow_name=workflow_name, data=data, notify=notify
-        )
-
-    def trigger_bulk_workflow(
-        self,
-        workflow_name: str,
-        notify: List[Dict[str, Any]],
-        data: Optional[Dict[str, Any]] = None,
-    ) -> BulkWorkflowExecutionData:
-        """Triggers a workflow in bulk for multiple recipients/notifications.
-
-        Args:
-            workflow_name: The name of the workflow to execute.
-            notify: A list of notification objects, each representing specific data
-                    for a workflow execution.
-            data: Common data that will be used across all workflow executions.
-
-        Returns:
-            BulkWorkflowExecutionData: Bulk workflow execution details.
-        """
-        return self._workflows.trigger_bulk_workflow(
-            workflow_name=workflow_name, notify=notify, data=data
-        )
-
-    def schedule_workflow(
-        self,
-        name: str,
-        schedule_time: str,
-        timezone_id: str,
-        start_date: str,
-        workflow_type: str,
-        workflow_id: str,
-        input_data: Dict[str, Any],
-        end_date: Optional[str] = None,
-    ) -> ScheduleData:
-        """Schedules a workflow execution.
-
-        Args:
-            name: Name of the schedule.
-            schedule_time: Time for the schedule in "HH:MM:SS" format.
-            timezone_id: Timezone ID (e.g., "Asia/Kolkata").
-            start_date: Start date for the schedule in "YYYY-MM-DD" format.
-            workflow_type: Type of schedule (e.g., "ONCE", "DAILY").
-            workflow_id: ID of the workflow to schedule.
-            input_data: Input data for the workflow.
-            end_date: Optional end date for the schedule in "YYYY-MM-DD" format.
-
-        Returns:
-            ScheduleData: Schedule details.
-        """
-        return self._workflows.schedule_workflow(
-            name=name,
-            schedule_time=schedule_time,
-            timezone_id=timezone_id,
-            start_date=start_date,
-            workflow_type=workflow_type,
-            workflow_id=workflow_id,
-            input_data=input_data,
-            end_date=end_date,
-        )
-
-    def add_user(
-        self,
-        unique_id: Optional[str] = None,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        whatsapp: Optional[str] = None,
-        active_channels: Optional[List[str]] = None,
-        active: Optional[bool] = None,
-        email: Optional[EmailStr] = None,
-        phone: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ) -> User:
-        """
-        Creates a user.
-
-        Args:
-            unique_id: Unique identifier for the user.
-            first_name: The first name of the user.
-            last_name: The last name of the user.
-            reference_id: Reference ID for the user.
-            whatsapp: WhatsApp number for the user.
-            active_channels: List of active channels for the user.
-            active: Whether the user is active.
-            email: Email address of the user.
-            phone: Phone number of the user.
-            attributes: Additional custom attributes for the user.
-            **kwargs: Additional user data.
-
-        Returns:
-            User: A User model representing the created or updated user.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
-        """
-        return self._users.add_user(
-            unique_id=unique_id,
-            first_name=first_name,
-            last_name=last_name,
-            reference_id=reference_id,
-            whatsapp=whatsapp,
-            active_channels=active_channels,
-            active=active,
-            email=email,
-            phone=phone,
-            attributes=attributes,
-            **kwargs,
-        )
-
-    def update_user(
-        self,
-        unique_id: str,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        whatsapp: Optional[str] = None,
-        active_channels: Optional[List[str]] = None,
-        active: Optional[bool] = None,
-        email: Optional[EmailStr] = None,
-        phone: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ) -> User:
-        """
-        Updates a user.
-
-        Args:
-            unique_id: The unique ID of the user to update.
-            first_name: The first name of the user.
-            last_name: The last name of the user.
-            reference_id: Reference ID for the user.
-            whatsapp: WhatsApp number for the user.
-            active_channels: List of active channels for the user.
-            active: Whether the user is active.
-            email: Email address of the user.
-            phone: Phone number of the user.
-            attributes: Additional custom attributes for the user.
-            **kwargs: Additional user data.
-
-        Returns:
-            User: A User model representing the updated user.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
-        """
-        return self._users.update_user(
-            unique_id=unique_id,
-            first_name=first_name,
-            last_name=last_name,
-            reference_id=reference_id,
-            whatsapp=whatsapp,
-            active_channels=active_channels,
-            active=active,
-            email=email,
-            phone=phone,
-            attributes=attributes,
-            **kwargs,
-        )
-
-    def delete_user(self, unique_id: str) -> bool:
-        """
-        Deletes a user.
-
-        Args:
-            unique_id: The unique ID of the user to delete.
-
-        Returns:
-            bool: True if the user was successfully deleted.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
-        """
-        return self._users.delete_user(unique_id)
-
-    def send_message(
-        self,
-        template_name: str,
-        channel: str,
-        recipient_type: str,
-        recipient_value: str,
-        template_variables: Optional[Dict[str, Any]] = None,
-    ) -> str:
-        """Send a message using a specific template.
-
-        Args:
-            template_name: The name of the template to use.
-            channel: The channel to send the message through (e.g., "SLACK", "EMAIL").
-            recipient_type: The type of recipient (e.g., "direct").
-            recipient_value: The identifier for the recipient (e.g., Slack user ID, email address).
-            template_variables: A dictionary of variables to populate the template.
-
-        Returns:
-            The message ID of the sent message.
-        """
-        return self._messaging.send_message(
-            template_name=template_name,
-            channel=channel,
-            recipient_type=recipient_type,
-            recipient_value=recipient_value,
-            template_variables=template_variables,
-        )
-
-    def get_replies(self, message_id: str) -> List[ReplyData]:
-        """Retrieve replies for a specific message.
-
-        Args:
-            message_id: The ID of the message for which to retrieve replies.
-
-        Returns:
-            A list of reply objects containing message details.
-        """
-        return self._messaging.get_replies(message_id=message_id)
-
-    def get_message_status(self, message_id: str) -> str:
-        """Retrieve the status of a specific message.
-
-        Args:
-            message_id: The ID of the message for which to retrieve the status.
-
-        Returns:
-            The status of the message (e.g., "DELIVERED", "PENDING").
-        """
-        return self._messaging.get_message_status(message_id=message_id)
-
-    # Webhook Management
-
-    def configure_notifications_webhook(self, url: str) -> WebhookConfig:
-        """
-        Configure the webhook for outgoing notifications.
-
-        Args:
-            url: The URL to be configured for the notifications webhook.
-
-        Returns:
-            The webhook configuration object with URL, headers, and verification key.
-        """
-        return self._webhooks.configure_notifications_webhook(url=url)
-
-    def configure_inbound_message_webhook(self, url: str) -> WebhookConfig:
-        """
-        Configure the webhook for inbound messages.
-
-        Args:
-            url: The URL to be configured for the inbound message webhook.
-
-        Returns:
-            The webhook configuration object with URL, headers, and verification key.
-        """
-        return self._webhooks.configure_inbound_message_webhook(url=url)
+    @property
+    def webhook(self) -> WebhookClient:
+        """Access to webhook operations."""
+        return self._webhook_client

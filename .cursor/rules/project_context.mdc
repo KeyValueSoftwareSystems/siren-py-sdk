@@ -7,15 +7,15 @@ alwaysApply: false
 
 ## Project Summary
 
-Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular manager-based architecture.
+Official Python SDK for the [Siren notification platform](https://docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
 
 ## Key Features / Functional Modules
 
-- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/managers/templates.py`
-- **Users** - Add, update, delete users → `siren/managers/users.py`
-- **Messaging** - Send messages, get replies, track status → `siren/managers/messaging.py`
-- **Webhooks** - Configure notification and inbound webhooks → `siren/managers/webhooks.py`
-- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/workflows.py`
+- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/clients/templates.py`
+- **Users** - Add, update, delete users → `siren/clients/users.py`
+- **Messaging** - Send messages, get replies, track status → `siren/clients/messaging.py`
+- **Webhooks** - Configure notification and inbound webhooks → `siren/clients/webhooks.py`
+- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/clients/workflows.py`
 - **Client** - Unified API entry point → `siren/client.py`
 
 ## Codebase Structure Overview
@@ -25,20 +25,21 @@ siren-ai/
 ├── siren/                    # Main SDK package
 │   ├── client.py            # Main SirenClient - unified API entry point
 │   ├── exceptions.py        # Custom exception classes (SirenAPIError, SirenSDKError)
-│   ├── workflows.py         # WorkflowsManager - workflow operations (legacy direct HTTP)
-│   ├── managers/            # BaseManager implementations (core pattern)
-│   │   ├── base.py          # BaseManager - shared HTTP/error handling
-│   │   ├── templates.py     # TemplatesManager - template operations
-│   │   ├── users.py         # UsersManager - user management
-│   │   ├── messaging.py     # MessagingManager - message operations
-│   │   └── webhooks.py      # WebhooksManager - webhook configuration
+│   ├── clients/            # Domain client implementations (core pattern)
+│   │   ├── base.py          # BaseClient - shared HTTP/error handling
+│   │   ├── templates.py     # TemplateClient - template operations
+│   │   ├── users.py         # UserClient - user management
+│   │   ├── messaging.py     # MessageClient - message operations
+│   │   ├── webhooks.py      # WebhookClient - webhook configuration
+│   │   └── workflows.py     # WorkflowClient - workflow operations
 │   └── models/              # Pydantic data models
 │       ├── base.py          # Base response models and common patterns
 │       ├── templates.py     # Template-specific models
 │       ├── user.py          # User-specific models
 │       ├── messaging.py     # Messaging models
-│       └── webhooks.py      # Webhook models
-├── tests/                   # Comprehensive test suite with ~95% coverage
+│       ├── webhooks.py      # Webhook models
+│       └── workflows.py     # Workflow models
+├── tests/                   # Comprehensive test suite with ~92% coverage
 ├── examples/                # Usage examples for each module
 ├── pyproject.toml          # Project configuration, dependencies, tools
 └── README.md               # Installation, usage, and API documentation
@@ -47,19 +48,19 @@ siren-ai/
 ## Architecture & Data Flow
 
 **Layered Architecture**:
-- **Client** (`SirenClient`) - Thin facade delegating to managers
-- **Managers** (`TemplatesManager`, `UsersManager`, etc.) - Domain-specific API handlers, inherit from `BaseManager` for unified HTTP/error handling
+- **Client** (`SirenClient`) - Thin facade delegating to domain clients
+- **Domain Clients** (`TemplateClient`, `UserClient`, etc.) - Domain-specific API handlers, inherit from `BaseClient` for unified HTTP/error handling
 - **Models** (Pydantic) - Request/response validation, field aliasing (snake_case ↔ camelCase)
 - **Exceptions** - `SirenAPIError` (API errors: 400/401/404) vs `SirenSDKError` (SDK issues: network/validation)
 
-**BaseManager Pattern** (Core Architecture):
-- All managers inherit from `BaseManager` for consistent HTTP handling
+**BaseClient Pattern** (Core Architecture):
+- All domain clients inherit from `BaseClient` for consistent HTTP handling
 - Requires both `request_model` and `response_model` for JSON operations
 - Automatic Pydantic validation, error handling, and response parsing
 - Common patterns: `DeleteResponse[None]` for 204 responses, flexible models with optional fields
 
-**Request Flow**: Client → Manager → HTTP Request → API → Response → Model → Client
-- Managers prepare requests with Pydantic validation → HTTP to Siren API → Responses parsed through models → Errors become structured exceptions
+**Request Flow**: Client → Domain Client → HTTP Request → API → Response → Model → Client
+- Domain clients prepare requests with Pydantic validation → HTTP to Siren API → Responses parsed through models → Errors become structured exceptions
 
 **Implementation Details**:
 - **HTTP Client**: `requests` library with 10s timeout (hardcoded, TODO: make configurable)
@@ -76,21 +77,21 @@ siren-ai/
 ## Testing
 
 **Strategy**: `requests-mock` with realistic API data
-**Organization**: One test file per manager, shared `client` fixture
+**Organization**: One test file per domain client, shared `client` fixture
 **Philosophy**: SDK testing focuses on request formatting, response parsing, error propagation - not API business logic
 
 ## Key Files
 
 - **`siren/client.py`** - Main client interface
-- **`siren/managers/base.py`** - BaseManager with unified HTTP/error handling (core pattern)
-- **`siren/managers/templates.py`** - Most complex manager, full BaseManager patterns
+- **`siren/clients/base.py`** - BaseClient with unified HTTP/error handling (core pattern)
+- **`siren/clients/templates.py`** - Most complex domain client, full BaseClient patterns
 - **`siren/models/base.py`** - Core models and error handling
 - **`siren/exceptions.py`** - Exception patterns
 
 ## Gotchas
 
 **Field Serialization**: Always use `by_alias=True` when calling `model_dump()`
-**BaseManager Requirements**: Both request_model and response_model needed for JSON operations
+**BaseClient Requirements**: Both request_model and response_model needed for JSON operations
 
 ## TODO / Future Areas
 

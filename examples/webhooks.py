@@ -12,7 +12,7 @@ from siren.exceptions import SirenAPIError, SirenSDKError
 def configure_notifications_webhook_example(client: SirenClient, webhook_url: str):
     """Example of configuring the notifications webhook."""
     try:
-        webhook_config = client.configure_notifications_webhook(url=webhook_url)
+        webhook_config = client.webhook.configure_notifications(url=webhook_url)
         print(
             f"Notifications webhook configured: {webhook_config.url} (key: {webhook_config.verification_key})"
         )
@@ -26,7 +26,7 @@ def configure_notifications_webhook_example(client: SirenClient, webhook_url: st
 def configure_inbound_message_webhook_example(client: SirenClient, webhook_url: str):
     """Example of configuring the inbound message webhook."""
     try:
-        webhook_config = client.configure_inbound_message_webhook(url=webhook_url)
+        webhook_config = client.webhook.configure_inbound(url=webhook_url)
         print(
             f"Inbound webhook configured: {webhook_config.url} (key: {webhook_config.verification_key})"
         )

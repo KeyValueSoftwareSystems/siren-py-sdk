@@ -1,12 +1,12 @@
-"""Unit tests for the webhooks manager using BaseManager."""
+"""Unit tests for the webhook client using BaseClient."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 
 from siren.client import SirenClient
+from siren.clients.webhooks import WebhookClient
 from siren.exceptions import SirenAPIError, SirenSDKError
-from siren.managers.webhooks import WebhooksManager
 from siren.models.webhooks import WebhookConfig
 
 API_KEY = "test_api_key"
@@ -22,14 +22,14 @@ def mock_response(status_code: int, json_data: dict = None):
     return mock_resp
 
 
-class TestWebhooksManager:
-    """Tests for the WebhooksManager class."""
+class TestWebhookClient:
+    """Tests for the WebhookClient class."""
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.manager = WebhooksManager(api_key=API_KEY, base_url=BASE_URL)
+        self.client = WebhookClient(api_key=API_KEY, base_url=BASE_URL)
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_configure_notifications_webhook_success(self, mock_request):
         """Test successful configuration of notifications webhook."""
         # Mock successful API response
@@ -47,7 +47,7 @@ class TestWebhooksManager:
         mock_request.return_value = mock_response(200, mock_api_response)
 
         # Call the method
-        result = self.manager.configure_notifications_webhook(url=WEBHOOK_URL)
+        result = self.client.configure_notifications(url=WEBHOOK_URL)
 
         # Verify result is WebhookConfig object
         assert isinstance(result, WebhookConfig)
@@ -55,7 +55,7 @@ class TestWebhooksManager:
         assert result.verification_key == "test_key_123"
         assert result.headers == []
 
-        # Verify request was made correctly with BaseManager
+        # Verify request was made correctly with BaseClient
         mock_request.assert_called_once_with(
             method="PUT",
             url=f"{BASE_URL}/api/v1/public/webhooks",
@@ -68,7 +68,7 @@ class TestWebhooksManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_configure_inbound_message_webhook_success(self, mock_request):
         """Test successful configuration of inbound message webhook."""
         # Mock successful API response
@@ -86,7 +86,7 @@ class TestWebhooksManager:
         mock_request.return_value = mock_response(200, mock_api_response)
 
         # Call the method
-        result = self.manager.configure_inbound_message_webhook(url=WEBHOOK_URL)
+        result = self.client.configure_inbound(url=WEBHOOK_URL)
 
         # Verify result is WebhookConfig object
         assert isinstance(result, WebhookConfig)
@@ -94,7 +94,7 @@ class TestWebhooksManager:
         assert result.verification_key == "test_key_456"
         assert result.headers == []
 
-        # Verify request was made correctly with BaseManager
+        # Verify request was made correctly with BaseClient
         mock_request.assert_called_once_with(
             method="PUT",
             url=f"{BASE_URL}/api/v1/public/webhooks",
@@ -110,11 +110,11 @@ class TestWebhooksManager:
     @pytest.mark.parametrize(
         "method_name,config_key",
         [
-            ("configure_notifications_webhook", "webhookConfig"),
-            ("configure_inbound_message_webhook", "inboundWebhookConfig"),
+            ("configure_notifications", "webhookConfig"),
+            ("configure_inbound", "inboundWebhookConfig"),
         ],
     )
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_webhook_api_error(self, mock_request, method_name: str, config_key: str):
         """Test API error during webhook configuration."""
         # Mock API error response
@@ -127,7 +127,7 @@ class TestWebhooksManager:
         }
         mock_request.return_value = mock_response(400, mock_api_error)
 
-        method_to_call = getattr(self.manager, method_name)
+        method_to_call = getattr(self.client, method_name)
 
         with pytest.raises(SirenAPIError) as exc_info:
             method_to_call(url=WEBHOOK_URL)
@@ -151,9 +151,9 @@ class TestWebhooksManager:
 
     @pytest.mark.parametrize(
         "method_name",
-        ["configure_notifications_webhook", "configure_inbound_message_webhook"],
+        ["configure_notifications", "configure_inbound"],
     )
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_webhook_network_error(self, mock_request, method_name: str):
         """Test network error during webhook configuration."""
         from requests.exceptions import ConnectionError
@@ -161,7 +161,7 @@ class TestWebhooksManager:
         # Mock network error
         mock_request.side_effect = ConnectionError("Connection failed")
 
-        method_to_call = getattr(self.manager, method_name)
+        method_to_call = getattr(self.client, method_name)
 
         with pytest.raises(SirenSDKError) as exc_info:
             method_to_call(url=WEBHOOK_URL)
@@ -170,38 +170,34 @@ class TestWebhooksManager:
 
 
 def test_siren_client_configure_notifications_webhook():
-    """Test SirenClient.configure_notifications_webhook calls WebhooksManager correctly."""
+    """Test SirenClient.webhook.configure_notifications calls WebhookClient correctly."""
     client = SirenClient(api_key=API_KEY, env="dev")
 
-    with patch.object(
-        client._webhooks, "configure_notifications_webhook"
-    ) as mock_method:
+    with patch.object(client._webhook_client, "configure_notifications") as mock_method:
         # Create WebhookConfig using model_validate to handle aliases properly
         mock_config = WebhookConfig.model_validate(
             {"url": WEBHOOK_URL, "headers": [], "verificationKey": "test_key_123"}
         )
         mock_method.return_value = mock_config
 
-        result = client.configure_notifications_webhook(url=WEBHOOK_URL)
+        result = client.webhook.configure_notifications(url=WEBHOOK_URL)
 
         mock_method.assert_called_once_with(url=WEBHOOK_URL)
         assert result == mock_config
 
 
 def test_siren_client_configure_inbound_message_webhook():
-    """Test SirenClient.configure_inbound_message_webhook calls WebhooksManager correctly."""
+    """Test SirenClient.webhook.configure_inbound calls WebhookClient correctly."""
     client = SirenClient(api_key=API_KEY, env="dev")
 
-    with patch.object(
-        client._webhooks, "configure_inbound_message_webhook"
-    ) as mock_method:
+    with patch.object(client._webhook_client, "configure_inbound") as mock_method:
         # Create WebhookConfig using model_validate to handle aliases properly
         mock_config = WebhookConfig.model_validate(
             {"url": WEBHOOK_URL, "headers": [], "verificationKey": "test_key_456"}
         )
         mock_method.return_value = mock_config
 
-        result = client.configure_inbound_message_webhook(url=WEBHOOK_URL)
+        result = client.webhook.configure_inbound(url=WEBHOOK_URL)
 
         mock_method.assert_called_once_with(url=WEBHOOK_URL)
         assert result == mock_config
