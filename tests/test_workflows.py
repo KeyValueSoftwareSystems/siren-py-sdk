@@ -22,7 +22,7 @@ WORKFLOW_NAME = "test_otp_workflow"
 @pytest.fixture
 def client() -> SirenClient:
     """Create a SirenClient instance for testing."""
-    return SirenClient(api_key=API_KEY)
+    return SirenClient(api_key=API_KEY, env="dev")
 
 
 def test_trigger_workflow_success_with_all_params(

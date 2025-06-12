@@ -171,7 +171,7 @@ class TestWebhooksManager:
 
 def test_siren_client_configure_notifications_webhook():
     """Test SirenClient.configure_notifications_webhook calls WebhooksManager correctly."""
-    client = SirenClient(api_key=API_KEY)
+    client = SirenClient(api_key=API_KEY, env="dev")
 
     with patch.object(
         client._webhooks, "configure_notifications_webhook"
@@ -190,7 +190,7 @@ def test_siren_client_configure_notifications_webhook():
 
 def test_siren_client_configure_inbound_message_webhook():
     """Test SirenClient.configure_inbound_message_webhook calls WebhooksManager correctly."""
-    client = SirenClient(api_key=API_KEY)
+    client = SirenClient(api_key=API_KEY, env="dev")
 
     with patch.object(
         client._webhooks, "configure_inbound_message_webhook"

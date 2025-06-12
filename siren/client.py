@@ -1,6 +1,7 @@
 """Siren API client implementation."""
 
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import EmailStr
 
@@ -23,29 +24,38 @@ from .models.workflows import (
 class SirenClient:
     """Client for interacting with the Siren API."""
 
-    # TODO: Implement logic to select API URL based on API key type (dev/prod) or environment variable
-    BASE_API_URL = "https://api.dev.trysiren.io"  # General base URL
+    # Environment-specific API URLs
+    API_URLS = {
+        "dev": "https://api.dev.trysiren.io",
+        "prod": "https://api.trysiren.io",
+    }
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, env: Optional[Literal["dev", "prod"]] = None):
         """Initialize the SirenClient.
 
         Args:
             api_key: The API key for authentication.
+            env: Environment to use ('dev' or 'prod').
+                 If not provided, defaults to 'prod' or uses SIREN_ENV environment variable.
         """
         self.api_key = api_key
-        self._templates = TemplatesManager(
-            api_key=self.api_key, base_url=self.BASE_API_URL
-        )
-        self._workflows = WorkflowsManager(
-            api_key=self.api_key, base_url=self.BASE_API_URL
-        )
-        self._webhooks = WebhooksManager(
-            api_key=self.api_key, base_url=self.BASE_API_URL
-        )
-        self._messaging = MessagingManager(
-            api_key=self.api_key, base_url=self.BASE_API_URL
-        )
-        self._users = UsersManager(api_key=self.api_key, base_url=self.BASE_API_URL)
+
+        # Determine environment and base URL
+        if env is None:
+            env = os.getenv("SIREN_ENV", "prod")
+
+        if env not in self.API_URLS:
+            raise ValueError(
+                f"Invalid environment '{env}'. Must be one of: {list(self.API_URLS.keys())}"
+            )
+
+        self.env = env
+        self.base_url = self.API_URLS[env]
+        self._templates = TemplatesManager(api_key=self.api_key, base_url=self.base_url)
+        self._workflows = WorkflowsManager(api_key=self.api_key, base_url=self.base_url)
+        self._webhooks = WebhooksManager(api_key=self.api_key, base_url=self.base_url)
+        self._messaging = MessagingManager(api_key=self.api_key, base_url=self.base_url)
+        self._users = UsersManager(api_key=self.api_key, base_url=self.base_url)
 
     def get_templates(
         self,

@@ -14,4 +14,4 @@ from siren import SirenClient
 @pytest.fixture
 def client():
     """Provides a SirenClient instance for testing, using a dummy API key."""
-    return SirenClient(api_key="test_api_key")
+    return SirenClient(api_key="test_api_key", env="dev")

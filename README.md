@@ -1,4 +1,4 @@
-# Siren AI Python SDK (`siren-ai`)
+# Siren Python SDK
 
 This is the official Python SDK for the [Siren notification platform](https://docs.trysiren.io).
 
@@ -34,6 +34,9 @@ message_id = client.send_message(
     template_variables={"user_name": "John Doe"}
 )
 print(f"Message sent! ID: {message_id}")
+
+# to specify env
+client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
 ```
 
 ## SDK Methods
@@ -73,6 +76,13 @@ The Siren-AI Python SDK provides an interface to interact with the Siren API.
 For detailed usage examples of all SDK methods, see the [examples](./examples/) folder.
 
 ## For Package Developers
+
+### Environment Configuration
+
+For testing the SDK, set these environment variables:
+
+- **`SIREN_API_KEY`**: Your API key from the Siren dashboard
+- **`SIREN_ENV`**: Set to `dev` for development/testing (defaults to `prod`)
 
 ### Prerequisites
 
@@ -114,6 +124,7 @@ For detailed usage examples of all SDK methods, see the [examples](./examples/) 
     ```
 
     You are now ready to contribute to the `siren-ai` SDK!
+    Try `$ python examples/webhooks.py`
 
 ### Code Style & Linting
 
