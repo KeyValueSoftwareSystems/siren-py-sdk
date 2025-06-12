@@ -95,7 +95,6 @@ siren-ai/
 ## TODO / Future Areas
 
 **Architecture Enhancements**:
-- Migrate WorkflowsManager to BaseManager pattern
 - Add retry logic for transient network failures
 - Add request/response logging capabilities
 
