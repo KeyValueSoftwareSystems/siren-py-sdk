@@ -19,25 +19,41 @@ pip install siren-ai
 
 ## Basic Usage
 
+### Synchronous
 ```python
 from siren import SirenClient
 
-# Initialize the client
-client = SirenClient(api_key="YOUR_SIREN_API_KEY")
+client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
 
-# Send a message
 message_id = client.message.send(
     template_name="welcome_email",
     channel="EMAIL",
     recipient_type="direct",
     recipient_value="user@example.com",
-    template_variables={"user_name": "John Doe"}
+    template_variables={"user_name": "John Doe"},
 )
-print(f"Message sent! ID: {message_id}")
-
-# To specify env
-client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
+print("Sent:", message_id)
 ```
+
+### Asynchronous
+```python
+from siren import AsyncSirenClient
+
+client = AsyncSirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
+
+message_id = await client.message.send(
+    template_name="welcome_email",
+    channel="EMAIL",
+    recipient_type="direct",
+    recipient_value="user@example.com",
+    template_variables={"user_name": "John Doe"},
+)
+print("Sent:", message_id)
+
+await client.aclose()
+```
+
+All synchronous methods have a 1-to-1 asynchronous equivalent—just `await` them on the async client.
 
 ## SDK Methods
 
@@ -114,19 +130,19 @@ For testing the SDK, set these environment variables:
     *(On Windows, use: `.venv\Scripts\activate`)*
 
 4.  **Install dependencies with `uv`:**
-    This installs `siren-ai` in editable mode (`-e`) and all development dependencies (`.[dev]`).
-    ```bash
-    uv pip install -e ".[dev]"
-    ```
+     This installs `siren-ai` in editable mode (`-e`) and all development dependencies (`.[dev]`).
+     ```bash
+     uv pip install -e ".[dev]"
+     ```
 
 5.  **Set up pre-commit hooks:**
-    (Ensures code quality before commits)
-    ```bash
-    uv run pre-commit install
-    ```
+     (Ensures code quality before commits)
+     ```bash
+     uv run pre-commit install
+     ```
 
-    You are now ready to contribute to the `siren-ai` SDK!
-    Try `$ python examples/webhooks.py`
+     You are now ready to contribute to the `siren-ai` SDK!
+     Try `$ python examples/webhooks.py`
 
 ### Code Style & Linting
 
