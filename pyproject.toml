@@ -32,6 +32,7 @@ keywords = ["siren", "notifications", "api", "sdk", "ai", "messaging", "communic
 
 dependencies = [
     "requests>=2.25.0", # HTTP client library
+    "httpx>=0.26.0", # Async/sync HTTP client supporting both transports
     "pydantic[email]>=2.0,<3.0", # Data validation and settings management
 ]
 
@@ -47,6 +48,7 @@ dev = [
     "pytest-cov",      # For test coverage reports
     "pytest-mock",     # For mocking objects in tests
     "requests-mock",   # For mocking HTTP requests in tests
+    "respx>=0.21.3",   # For mocking httpx in async tests
     "ruff",            # Linter, formatter, import sorter
     "pyright",         # Static type checker
     "pre-commit",      # For managing pre-commit hooks
