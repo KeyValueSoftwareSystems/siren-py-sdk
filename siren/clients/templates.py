@@ -5,12 +5,9 @@ from typing import List, Optional
 from ..models.base import DeleteResponse
 from ..models.templates import (
     ChannelTemplate,
-    CreateChannelTemplatesRequest,
-    CreateChannelTemplatesResponse,
     CreatedTemplate,
     CreateTemplateRequest,
     CreateTemplateResponse,
-    GetChannelTemplatesResponse,
     PublishTemplateResponse,
     Template,
     TemplateListResponse,
@@ -18,10 +15,25 @@ from ..models.templates import (
     UpdateTemplateResponse,
 )
 from .base import BaseClient
+from .channel_templates import ChannelTemplateClient
 
 
 class TemplateClient(BaseClient):
     """Client for template operations."""
+
+    def __init__(self, api_key: str, base_url: str, timeout: int = 10):
+        """Initialize TemplateClient with an internal ChannelTemplateClient.
+
+        Args:
+            api_key: Bearer token for Siren API.
+            base_url: API root.
+            timeout: Request timeout in seconds.
+        """
+        super().__init__(api_key=api_key, base_url=base_url, timeout=timeout)
+        # Re-use specialised client instead of duplicating logic
+        self._channel_template_client = ChannelTemplateClient(
+            api_key=api_key, base_url=base_url, timeout=timeout
+        )
 
     def get(
         self,
@@ -152,75 +164,37 @@ class TemplateClient(BaseClient):
         )
         return response
 
+    # ---------------------------------------------------------------------
+    # Channel-template helpers (deprecated wrappers)
+    # ---------------------------------------------------------------------
+
     def create_channel_templates(
         self, template_id: str, **channel_templates_data
-    ) -> List[ChannelTemplate]:
-        """Create or update channel templates for a specific template.
+    ) -> list[ChannelTemplate]:
+        """DEPRECATED – use :pyattr:`siren.SirenClient.channel_template.create`.
 
-        Args:
-            template_id: The ID of the template for which to create channel templates.
-            **channel_templates_data: Channel templates configuration where keys are
-                                    channel names (e.g., "EMAIL", "SMS") and values
-                                    are the channel-specific template objects.
-
-        Returns:
-            List[ChannelTemplate]: List of created channel template objects.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+        This thin wrapper delegates to an internal ``ChannelTemplateClient`` to
+        preserve backwards-compatibility while avoiding code duplication.
         """
-        response = self._make_request(
-            method="POST",
-            endpoint=f"/api/v1/public/template/{template_id}/channel-templates",
-            request_model=CreateChannelTemplatesRequest,
-            response_model=CreateChannelTemplatesResponse,
-            data=channel_templates_data,
+        return self._channel_template_client.create(
+            template_id, **channel_templates_data
         )
-        return response
 
     def get_channel_templates(
         self,
         version_id: str,
-        channel: Optional[str] = None,
-        search: Optional[str] = None,
-        sort: Optional[str] = None,
-        page: Optional[int] = None,
-        size: Optional[int] = None,
-    ) -> List[ChannelTemplate]:
-        """Fetch channel templates for a specific template version.
-
-        Args:
-            version_id: The ID of the template version for which to fetch channel templates.
-            channel: Filter by channel type (e.g., "EMAIL", "SMS").
-            search: Search term to filter channel templates.
-            sort: Sort by field.
-            page: Page number.
-            size: Page size.
-
-        Returns:
-            List[ChannelTemplate]: List of channel template objects.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
-        """
-        params = {}
-        if channel is not None:
-            params["channel"] = channel
-        if search is not None:
-            params["search"] = search
-        if sort is not None:
-            params["sort"] = sort
-        if page is not None:
-            params["page"] = page
-        if size is not None:
-            params["size"] = size
-
-        response = self._make_request(
-            method="GET",
-            endpoint=f"/api/v1/public/template/versions/{version_id}/channel-templates",
-            response_model=GetChannelTemplatesResponse,
-            params=params,
+        channel: str | None = None,
+        search: str | None = None,
+        sort: str | None = None,
+        page: int | None = None,
+        size: int | None = None,
+    ) -> list[ChannelTemplate]:
+        """DEPRECATED – use ``ChannelTemplateClient.get`` instead."""
+        return self._channel_template_client.get(
+            version_id,
+            channel=channel,
+            search=search,
+            sort=sort,
+            page=page,
+            size=size,
         )
-        return response

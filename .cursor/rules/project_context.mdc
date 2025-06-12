@@ -101,3 +101,29 @@ siren-ai/
 
 **Testing Gaps**:
 - Integration tests against live API (currently only unit tests with mocks)
+
+## Documentation / Examples
+
+**Example Script Guidelines**:
+- Call `dotenv.load_dotenv()` first, then read `SIREN_API_KEY` (and optional `SIREN_ENV`).
+- Instantiate the appropriate sync (`SirenClient`) or async (`AsyncSirenClient`) client with those env values.
+- Wrap core SDK calls in minimal error handling:
+  ```python
+  try:
+      ...  # SDK call(s)
+  except SirenAPIError as e:
+      print(f"API error: {e.error_code} - {e.api_message}")
+  except SirenSDKError as e:
+      print(f"SDK error: {e.message}")
+  ```
+- Print only the key fields from responses (e.g., `id`, `url`, `status`) to keep output concise.
+- Scripts should demonstrate one or two primary operations per domain—avoid extra verbosity.
+
+## HTTP Transport & Sync/Async Support
+- Under the hood the SDK now uses a pluggable transport layer (`siren/http/transport.py`).
+- **Sync** clients delegate to `SyncTransport` (currently wraps `requests`, easy to flip to `httpx.Client`).
+- **Async** clients delegate to `AsyncTransport` which wraps `httpx.AsyncClient`.
+- Every domain client has a 1-to-1 async counterpart; `AsyncSirenClient` exposes them.
+- Sync and async share identical method names and signatures—just `await` the async version.
+- Testing: existing sync tests use `requests-mock`; async tests use **respx** for `httpx`.
+- Examples: each domain has both `*_async.py` and sync counterpart in `examples/` demonstrating identical flows.

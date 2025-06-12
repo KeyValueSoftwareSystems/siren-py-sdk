@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "siren-ai"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name = "Jithu", email = "jithu@keyvalue.systems" },
 ]
@@ -48,7 +48,8 @@ dev = [
     "pytest-cov",      # For test coverage reports
     "pytest-mock",     # For mocking objects in tests
     "requests-mock",   # For mocking HTTP requests in tests
-    "respx>=0.21.3",   # For mocking httpx in async tests
+    "pytest-asyncio>=0.20",  # Async test support
+    "respx>=0.21.0,<0.23",   # For mocking httpx in async tests
     "ruff",            # Linter, formatter, import sorter
     "pyright",         # Static type checker
     "pre-commit",      # For managing pre-commit hooks

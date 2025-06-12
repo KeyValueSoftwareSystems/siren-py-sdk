@@ -50,7 +50,7 @@ class ReplyData(BaseModel):
     """Individual reply data."""
 
     text: str
-    thread_ts: str = Field(alias="threadTs")
+    thread_ts: Optional[str] = Field(None, alias="threadTs")
     user: str
     ts: str
 
