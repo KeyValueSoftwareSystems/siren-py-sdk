@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 def trigger_workflow_example(client: SirenClient) -> None:
     """Example of triggering a workflow."""
     try:
-        execution = client.trigger_workflow(
+        execution = client.workflow.trigger(
             workflow_name="sampleWorkflow",
             data={"subject": "Welcome"},
             notify={"email": "user@example.com"},
@@ -28,7 +28,7 @@ def trigger_workflow_example(client: SirenClient) -> None:
 def trigger_bulk_workflow_example(client: SirenClient) -> None:
     """Example of triggering a bulk workflow."""
     try:
-        bulk_execution = client.trigger_bulk_workflow(
+        bulk_execution = client.workflow.trigger_bulk(
             workflow_name="sampleWorkflow",
             notify=[{"email": "user1@example.com"}, {"email": "user2@example.com"}],
             data={"template": "welcome"},
@@ -43,7 +43,7 @@ def trigger_bulk_workflow_example(client: SirenClient) -> None:
 def schedule_workflow_example(client: SirenClient) -> None:
     """Example of scheduling a workflow."""
     try:
-        schedule = client.schedule_workflow(
+        schedule = client.workflow.schedule(
             name="sampleWorkflow123",
             schedule_time="21:31:00",
             timezone_id="Asia/Kolkata",

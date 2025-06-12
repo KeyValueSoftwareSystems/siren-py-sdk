@@ -1,4 +1,4 @@
-"""Workflows manager using BaseManager architecture."""
+"""Workflows client using BaseClient architecture."""
 
 from typing import Any, Dict, List, Optional
 
@@ -13,13 +13,13 @@ from ..models.workflows import (
     TriggerWorkflowResponse,
     WorkflowExecutionData,
 )
-from .base import BaseManager
+from .base import BaseClient
 
 
-class WorkflowsManager(BaseManager):
-    """Manager for workflow operations using BaseManager."""
+class WorkflowClient(BaseClient):
+    """Client for workflow operations using BaseClient."""
 
-    def trigger_workflow(
+    def trigger(
         self,
         workflow_name: str,
         data: Optional[Dict[str, Any]] = None,
@@ -60,7 +60,7 @@ class WorkflowsManager(BaseManager):
             self.timeout = original_timeout
         return response
 
-    def trigger_bulk_workflow(
+    def trigger_bulk(
         self,
         workflow_name: str,
         notify: List[Dict[str, Any]],
@@ -103,7 +103,7 @@ class WorkflowsManager(BaseManager):
             self.timeout = original_timeout
         return response
 
-    def schedule_workflow(
+    def schedule(
         self,
         name: str,
         schedule_time: str,

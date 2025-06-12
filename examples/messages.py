@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 def send_message_example(client: SirenClient) -> str:
     """Example of sending a message."""
     try:
-        message_id = client.send_message(
+        message_id = client.message.send(
             template_name="sampleTemplate",
             channel="SLACK",
             recipient_type="direct",
@@ -31,7 +31,7 @@ def send_message_example(client: SirenClient) -> str:
 def get_message_status_example(client: SirenClient, message_id: str) -> None:
     """Example of getting message status."""
     try:
-        status = client.get_message_status(message_id=message_id)
+        status = client.message.get_status(message_id=message_id)
         print(f"Message status: {status}")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
@@ -42,7 +42,7 @@ def get_message_status_example(client: SirenClient, message_id: str) -> None:
 def get_replies_example(client: SirenClient, message_id: str) -> None:
     """Example of getting message replies."""
     try:
-        replies = client.get_replies(message_id=message_id)
+        replies = client.message.get_replies(message_id=message_id)
         print(f"Found {len(replies)} replies:")
         for i, reply in enumerate(replies):
             print(f"  Reply {i + 1}: {reply.text} (User: {reply.user})")

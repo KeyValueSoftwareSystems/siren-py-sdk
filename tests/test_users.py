@@ -8,8 +8,8 @@ import pytest
 import requests
 
 from siren.client import SirenClient
+from siren.clients.users import UserClient
 from siren.exceptions import SirenAPIError, SirenSDKError
-from siren.managers.users import UsersManager
 from siren.models.user import User
 
 # Test constants
@@ -19,9 +19,9 @@ MOCK_USER_ID = "user_123"
 
 
 @pytest.fixture
-def users_manager():
-    """Fixture to create a UsersManager instance."""
-    return UsersManager(api_key=MOCK_API_KEY, base_url=MOCK_BASE_URL)
+def user_client():
+    """Fixture to create a UserClient instance."""
+    return UserClient(api_key=MOCK_API_KEY, base_url=MOCK_BASE_URL)
 
 
 @pytest.fixture
@@ -46,11 +46,11 @@ def mock_response(
     return mock_resp
 
 
-class TestUsersManager:
-    """Tests for the UsersManager class."""
+class TestUserClient:
+    """Tests for the UserClient class."""
 
-    @patch("siren.managers.base.requests.request")
-    def test_add_user_success(self, mock_request, users_manager: UsersManager):
+    @patch("siren.clients.base.requests.request")
+    def test_add_user_success(self, mock_request, user_client: UserClient):
         """Test successful user creation/update returns a User model instance."""
         # Mock API response with all possible user fields
         mock_api_json_response = {
@@ -83,7 +83,7 @@ class TestUsersManager:
             "active_channels": ["EMAIL"],
             "attributes": {"custom_field": "value1"},
         }
-        response = users_manager.add_user(**payload)
+        response = user_client.add(**payload)
 
         # Expected API request with camelCase keys
         expected_headers = {
@@ -124,9 +124,9 @@ class TestUsersManager:
         assert response.phone is None
         assert response.avatar_url is None
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_add_user_api_error_returns_json(
-        self, mock_request, users_manager: UsersManager
+        self, mock_request, user_client: UserClient
     ):
         """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
         # Mock API error response with validation details
@@ -149,7 +149,7 @@ class TestUsersManager:
         mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
-            users_manager.add_user(unique_id=MOCK_USER_ID)
+            user_client.add(unique_id=MOCK_USER_ID)
 
         # Verify error details
         assert excinfo.value.status_code == status_code
@@ -160,10 +160,8 @@ class TestUsersManager:
             == mock_api_error_payload["error"]["details"]
         )
 
-    @patch("siren.managers.base.requests.request")
-    def test_add_user_http_error_no_json(
-        self, mock_request, users_manager: UsersManager
-    ):
+    @patch("siren.clients.base.requests.request")
+    def test_add_user_http_error_no_json(self, mock_request, user_client: UserClient):
         """Test API error (500) without JSON body raises SirenSDKError."""
         # Mock non-JSON error response
         status_code = 500
@@ -176,7 +174,7 @@ class TestUsersManager:
         mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenSDKError) as excinfo:
-            users_manager.add_user(unique_id=MOCK_USER_ID)
+            user_client.add(unique_id=MOCK_USER_ID)
 
         assert isinstance(
             excinfo.value.original_exception, requests.exceptions.JSONDecodeError
@@ -184,10 +182,8 @@ class TestUsersManager:
         assert "API response was not valid JSON" in excinfo.value.message
         assert error_text in excinfo.value.message
 
-    @patch("siren.managers.base.requests.request")
-    def test_add_user_request_exception(
-        self, mock_request, users_manager: UsersManager
-    ):
+    @patch("siren.clients.base.requests.request")
+    def test_add_user_request_exception(self, mock_request, user_client: UserClient):
         """Test handling of requests.exceptions.RequestException (e.g., network error) raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
@@ -196,7 +192,7 @@ class TestUsersManager:
         mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
-            users_manager.add_user(unique_id=MOCK_USER_ID)
+            user_client.add(unique_id=MOCK_USER_ID)
 
         assert excinfo.value.original_exception == original_exception
         assert isinstance(
@@ -204,8 +200,8 @@ class TestUsersManager:
         )
         assert "Network or connection error" in excinfo.value.message
 
-    @patch("siren.managers.base.requests.request")
-    def test_update_user_success(self, mock_request, users_manager: UsersManager):
+    @patch("siren.clients.base.requests.request")
+    def test_update_user_success(self, mock_request, user_client: UserClient):
         """Test successful user update returns a User model instance."""
         # Mock API response
         mock_api_json_response = {
@@ -239,7 +235,7 @@ class TestUsersManager:
             "reference_id": "020",
             "whatsapp": "+919632323154",
         }
-        response = users_manager.update_user(MOCK_USER_ID, **payload)
+        response = user_client.update(MOCK_USER_ID, **payload)
 
         # Expected API request with camelCase keys
         expected_headers = {
@@ -277,9 +273,9 @@ class TestUsersManager:
         assert response.whatsapp == "+919632323154"
         assert response.updated_at == "2023-01-02T12:00:00Z"
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_update_user_api_error_returns_json(
-        self, mock_request, users_manager: UsersManager
+        self, mock_request, user_client: UserClient
     ):
         """Test API error (400, 401, 404) with JSON body raises SirenAPIError."""
         # Mock API error response
@@ -295,28 +291,24 @@ class TestUsersManager:
         mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
-            users_manager.update_user(MOCK_USER_ID, first_name="Jane")
+            user_client.update(MOCK_USER_ID, first_name="Jane")
 
         # Verify error details
         assert excinfo.value.status_code == status_code
         assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
         assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
 
-    @patch("siren.managers.base.requests.request")
-    def test_update_user_validation_error(
-        self, mock_request, users_manager: UsersManager
-    ):
+    @patch("siren.clients.base.requests.request")
+    def test_update_user_validation_error(self, mock_request, user_client: UserClient):
         """Test invalid parameters raise SirenSDKError."""
         with pytest.raises(SirenSDKError) as excinfo:
-            users_manager.update_user(MOCK_USER_ID, email="invalid-email")
+            user_client.update(MOCK_USER_ID, email="invalid-email")
 
         assert "Invalid parameters" in excinfo.value.message
         mock_request.assert_not_called()
 
-    @patch("siren.managers.base.requests.request")
-    def test_update_user_request_exception(
-        self, mock_request, users_manager: UsersManager
-    ):
+    @patch("siren.clients.base.requests.request")
+    def test_update_user_request_exception(self, mock_request, user_client: UserClient):
         """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
@@ -325,18 +317,18 @@ class TestUsersManager:
         mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
-            users_manager.update_user(MOCK_USER_ID, first_name="Jane")
+            user_client.update(MOCK_USER_ID, first_name="Jane")
 
         assert excinfo.value.original_exception == original_exception
         assert "Network or connection error" in excinfo.value.message
 
-    @patch("siren.managers.base.requests.request")
-    def test_delete_user_success(self, mock_request, users_manager: UsersManager):
+    @patch("siren.clients.base.requests.request")
+    def test_delete_user_success(self, mock_request, user_client: UserClient):
         """Test successful user deletion returns True."""
         # Mock API response for 204 No Content
         mock_request.return_value = mock_response(204)
 
-        response = users_manager.delete_user(MOCK_USER_ID)
+        response = user_client.delete(MOCK_USER_ID)
 
         # Expected API request
         expected_headers = {
@@ -354,8 +346,8 @@ class TestUsersManager:
         # Verify response
         assert response is True
 
-    @patch("siren.managers.base.requests.request")
-    def test_delete_user_not_found(self, mock_request, users_manager: UsersManager):
+    @patch("siren.clients.base.requests.request")
+    def test_delete_user_not_found(self, mock_request, user_client: UserClient):
         """Test API error (404) raises SirenAPIError."""
         # Mock API error response
         mock_api_error_payload = {
@@ -370,17 +362,15 @@ class TestUsersManager:
         mock_request.return_value = err_response_obj
 
         with pytest.raises(SirenAPIError) as excinfo:
-            users_manager.delete_user(MOCK_USER_ID)
+            user_client.delete(MOCK_USER_ID)
 
         # Verify error details
         assert excinfo.value.status_code == status_code
         assert excinfo.value.api_message == mock_api_error_payload["error"]["message"]
         assert excinfo.value.error_code == mock_api_error_payload["error"]["errorCode"]
 
-    @patch("siren.managers.base.requests.request")
-    def test_delete_user_request_exception(
-        self, mock_request, users_manager: UsersManager
-    ):
+    @patch("siren.clients.base.requests.request")
+    def test_delete_user_request_exception(self, mock_request, user_client: UserClient):
         """Test handling of requests.exceptions.RequestException raises SirenSDKError."""
         # Mock network error
         original_exception = requests.exceptions.ConnectionError(
@@ -389,7 +379,7 @@ class TestUsersManager:
         mock_request.side_effect = original_exception
 
         with pytest.raises(SirenSDKError) as excinfo:
-            users_manager.delete_user(MOCK_USER_ID)
+            user_client.delete(MOCK_USER_ID)
 
         assert excinfo.value.original_exception == original_exception
         assert "Network or connection error" in excinfo.value.message
@@ -398,11 +388,11 @@ class TestUsersManager:
 class TestSirenClientUsers:
     """Tests for user management methods exposed on SirenClient."""
 
-    @patch("siren.client.UsersManager.add_user")
-    def test_client_add_user_delegates_to_manager(
-        self, mock_manager_add_user, siren_client: SirenClient
+    @patch("siren.client.UserClient.add")
+    def test_client_add_user_delegates_to_client(
+        self, mock_client_add_user, siren_client: SirenClient
     ):
-        """Test that SirenClient.add_user correctly delegates to UsersManager.add_user."""
+        """Test that SirenClient.user.add correctly delegates to UserClient.add."""
         # Test data
         payload = {
             "unique_id": "client_user_001",
@@ -436,13 +426,13 @@ class TestSirenClientUsers:
             line=None,
             customData=None,
         )
-        mock_manager_add_user.return_value = mock_user_instance
+        mock_client_add_user.return_value = mock_user_instance
 
-        response = siren_client.add_user(**payload)
+        response = siren_client.user.add(**payload)
 
         # Verify delegation
-        mock_manager_add_user.assert_called_once()
-        call_args = mock_manager_add_user.call_args[1]
+        mock_client_add_user.assert_called_once()
+        call_args = mock_client_add_user.call_args[1]
         assert call_args["unique_id"] == payload["unique_id"]
         assert call_args["first_name"] == payload["first_name"]
         assert call_args["last_name"] == payload["last_name"]
@@ -450,11 +440,11 @@ class TestSirenClientUsers:
         assert call_args["attributes"] == payload["attributes"]
         assert response == mock_user_instance
 
-    @patch("siren.client.UsersManager.update_user")
-    def test_client_update_user_delegates_to_manager(
-        self, mock_manager_update_user, siren_client: SirenClient
+    @patch("siren.client.UserClient.update")
+    def test_client_update_user_delegates_to_client(
+        self, mock_client_update_user, siren_client: SirenClient
     ):
-        """Test that SirenClient.update_user correctly delegates to UsersManager.update_user."""
+        """Test that SirenClient.user.update correctly delegates to UserClient.update."""
         # Test data
         unique_id = "client_user_001"
         payload = {
@@ -495,34 +485,36 @@ class TestSirenClientUsers:
             line="line_user_id_123",
             customData={"custom_field": "custom_value"},
         )
-        mock_manager_update_user.return_value = mock_user_instance
+        mock_client_update_user.return_value = mock_user_instance
 
-        response = siren_client.update_user(unique_id, **payload)
+        response = siren_client.user.update(unique_id, **payload)
 
         # Verify delegation
-        mock_manager_update_user.assert_called_once()
-        call_args = mock_manager_update_user.call_args
+        mock_client_update_user.assert_called_once()
+        call_args = mock_client_update_user.call_args
+        # Check positional args
+        args = call_args[0]
         call_kwargs = call_args[1]
-        assert call_kwargs["unique_id"] == unique_id
+        assert args[0] == unique_id  # unique_id is first positional argument
         assert call_kwargs["first_name"] == payload["first_name"]
         assert call_kwargs["last_name"] == payload["last_name"]
         assert call_kwargs["email"] == payload["email"]
         assert call_kwargs["attributes"] == payload["attributes"]
         assert response == mock_user_instance
 
-    @patch("siren.client.UsersManager.delete_user")
-    def test_client_delete_user_delegates_to_manager(
-        self, mock_manager_delete_user, siren_client: SirenClient
+    @patch("siren.client.UserClient.delete")
+    def test_client_delete_user_delegates_to_client(
+        self, mock_client_delete_user, siren_client: SirenClient
     ):
-        """Test that SirenClient.delete_user correctly delegates to UsersManager.delete_user."""
+        """Test that SirenClient.user.delete correctly delegates to UserClient.delete."""
         # Test data
         unique_id = "client_user_001"
 
         # Mock response
-        mock_manager_delete_user.return_value = True
+        mock_client_delete_user.return_value = True
 
-        response = siren_client.delete_user(unique_id)
+        response = siren_client.user.delete(unique_id)
 
         # Verify delegation
-        mock_manager_delete_user.assert_called_once_with(unique_id)
+        mock_client_delete_user.assert_called_once_with(unique_id)
         assert response is True

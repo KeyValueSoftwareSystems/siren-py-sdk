@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 def get_templates_example(client: SirenClient) -> None:
     """Example of getting templates."""
     try:
-        templates = client.get_templates(page=0, size=2)
+        templates = client.template.get(page=0, size=2)
         print(f"Retrieved {len(templates)} templates")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
@@ -28,7 +28,7 @@ def create_template_example(client: SirenClient) -> str:
     timestamp = int(time.time())
 
     try:
-        created = client.create_template(
+        created = client.template.create(
             name=f"SDK_Example_Template_{timestamp}",
             description="Test template from SDK",
             tag_names=["sdk-test", "example"],
@@ -56,7 +56,7 @@ def create_template_example(client: SirenClient) -> str:
 def update_template_example(client: SirenClient, template_id: str) -> None:
     """Example of updating a template."""
     try:
-        updated = client.update_template(
+        updated = client.template.update(
             template_id,
             name="Updated_SDK_Example",
             description="Updated description from SDK",
@@ -72,7 +72,7 @@ def update_template_example(client: SirenClient, template_id: str) -> None:
 def publish_template_example(client: SirenClient, template_id: str):
     """Example of publishing a template."""
     try:
-        published = client.publish_template(template_id)
+        published = client.template.publish(template_id)
         print(f"Published template: {published.id}")
         return published
     except SirenAPIError as e:
@@ -86,7 +86,7 @@ def publish_template_example(client: SirenClient, template_id: str):
 def create_channel_templates_example(client: SirenClient, template_id: str) -> None:
     """Example of creating channel templates for a template."""
     try:
-        result = client.create_channel_templates(
+        result = client.template.create_channel_templates(
             template_id,
             SMS={
                 "body": "Hello {{user_name}}! This is from SDK.",
@@ -112,7 +112,7 @@ def create_channel_templates_example(client: SirenClient, template_id: str) -> N
 def get_channel_templates_example(client: SirenClient, version_id: str) -> None:
     """Example of getting channel templates for a template version."""
     try:
-        result = client.get_channel_templates(version_id, page=0, size=5)
+        result = client.template.get_channel_templates(version_id, page=0, size=5)
         print(f"Retrieved {len(result)} channel templates")
     except SirenAPIError as e:
         print(f"API Error: {e.error_code} - {e.api_message}")
@@ -123,7 +123,7 @@ def get_channel_templates_example(client: SirenClient, version_id: str) -> None:
 def delete_template_example(client: SirenClient, template_id: str) -> None:
     """Example of deleting a template."""
     try:
-        result = client.delete_template(template_id)
+        result = client.template.delete(template_id)
         if result:
             print(f"Successfully deleted template: {template_id}")
         else:

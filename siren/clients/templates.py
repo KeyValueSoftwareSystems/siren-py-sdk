@@ -1,4 +1,4 @@
-"""New templates manager using BaseManager architecture."""
+"""New templates client using BaseClient architecture."""
 
 from typing import List, Optional
 
@@ -17,13 +17,13 @@ from ..models.templates import (
     UpdateTemplateRequest,
     UpdateTemplateResponse,
 )
-from .base import BaseManager
+from .base import BaseClient
 
 
-class TemplatesManager(BaseManager):
-    """Manager for template operations using BaseManager."""
+class TemplateClient(BaseClient):
+    """Client for template operations."""
 
-    def get_templates(
+    def get(
         self,
         tag_names: Optional[str] = None,
         search: Optional[str] = None,
@@ -67,7 +67,29 @@ class TemplatesManager(BaseManager):
         )
         return response
 
-    def update_template(self, template_id: str, **template_data) -> Template:
+    def create(self, **template_data) -> CreatedTemplate:
+        """Create a new template.
+
+        Args:
+            **template_data: Template attributes matching the CreateTemplateRequest model fields.
+
+        Returns:
+            CreatedTemplate: A CreatedTemplate model representing the created template.
+
+        Raises:
+            SirenAPIError: If the API returns an error response.
+            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+        """
+        response = self._make_request(
+            method="POST",
+            endpoint="/api/v1/public/template",
+            request_model=CreateTemplateRequest,
+            response_model=CreateTemplateResponse,
+            data=template_data,
+        )
+        return response
+
+    def update(self, template_id: str, **template_data) -> Template:
         """Update an existing template.
 
         Args:
@@ -90,29 +112,7 @@ class TemplatesManager(BaseManager):
         )
         return response
 
-    def create_template(self, **template_data) -> CreatedTemplate:
-        """Create a new template.
-
-        Args:
-            **template_data: Template attributes matching the CreateTemplateRequest model fields.
-
-        Returns:
-            CreatedTemplate: A CreatedTemplate model representing the created template.
-
-        Raises:
-            SirenAPIError: If the API returns an error response.
-            SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
-        """
-        response = self._make_request(
-            method="POST",
-            endpoint="/api/v1/public/template",
-            request_model=CreateTemplateRequest,
-            response_model=CreateTemplateResponse,
-            data=template_data,
-        )
-        return response
-
-    def delete_template(self, template_id: str) -> bool:
+    def delete(self, template_id: str) -> bool:
         """Delete a template.
 
         Args:
@@ -132,7 +132,7 @@ class TemplatesManager(BaseManager):
             expected_status=204,
         )
 
-    def publish_template(self, template_id: str) -> Template:
+    def publish(self, template_id: str) -> Template:
         """Publish a template.
 
         Args:

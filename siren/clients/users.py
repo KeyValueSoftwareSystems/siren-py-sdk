@@ -1,14 +1,14 @@
-"""Manages user-related operations for the Siren API client."""
+"""User client for the Siren API."""
 
 from ..models.base import DeleteResponse
 from ..models.user import User, UserAPIResponse, UserRequest
-from .base import BaseManager
+from .base import BaseClient
 
 
-class UsersManager(BaseManager):
-    """Manages user-related operations for the Siren API."""
+class UserClient(BaseClient):
+    """Client for user-related operations."""
 
-    def add_user(self, **user_data) -> User:
+    def add(self, **user_data) -> User:
         """Create a user.
 
         Args:
@@ -29,7 +29,7 @@ class UsersManager(BaseManager):
             data=user_data,
         )
 
-    def update_user(self, unique_id: str, **user_data) -> User:
+    def update(self, unique_id: str, **user_data) -> User:
         """Update a user.
 
         Args:
@@ -52,7 +52,7 @@ class UsersManager(BaseManager):
             data=user_data,
         )
 
-    def delete_user(self, unique_id: str) -> bool:
+    def delete(self, unique_id: str) -> bool:
         """Delete a user.
 
         Args:

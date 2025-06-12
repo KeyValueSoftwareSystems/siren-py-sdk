@@ -1,11 +1,11 @@
-"""Unit tests for the templates manager using BaseManager."""
+"""Unit tests for the templates client using BaseClient."""
 
 from unittest.mock import Mock, patch
 
 import pytest
 
+from siren.clients.templates import TemplateClient
 from siren.exceptions import SirenAPIError, SirenSDKError
-from siren.managers.templates import TemplatesManager
 from siren.models.templates import CreatedTemplate, Template
 
 API_KEY = "test_api_key"
@@ -20,14 +20,14 @@ def mock_response(status_code: int, json_data: dict = None):
     return mock_resp
 
 
-class TestTemplatesManager:
-    """Tests for the TemplatesManager class."""
+class TestTemplateClient:
+    """Tests for the TemplateClient class."""
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.manager = TemplatesManager(api_key=API_KEY, base_url=BASE_URL)
+        self.client = TemplateClient(api_key=API_KEY, base_url=BASE_URL)
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_templates_success(self, mock_request):
         """Test successful retrieval of templates."""
         # Mock API response based on user-provided response
@@ -93,7 +93,7 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(200, mock_api_response)
 
         # Call the method
-        result = self.manager.get_templates(page=0, size=2)
+        result = self.client.get(page=0, size=2)
 
         # Verify result is List[Template]
         assert isinstance(result, list)
@@ -116,7 +116,7 @@ class TestTemplatesManager:
         assert second_template.draft_version.status == "DRAFT"
         assert second_template.published_version.status == "PUBLISHED_LATEST"
 
-        # Verify request was made correctly with BaseManager
+        # Verify request was made correctly with BaseClient
         mock_request.assert_called_once_with(
             method="GET",
             url=f"{BASE_URL}/api/v1/public/template",
@@ -126,7 +126,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_templates_with_all_params(self, mock_request):
         """Test get_templates with all optional parameters."""
         mock_api_response = {
@@ -144,7 +144,7 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(200, mock_api_response)
 
         # Call with all parameters
-        result = self.manager.get_templates(
+        result = self.client.get(
             tag_names="test,example", search="template", sort="name,asc", page=1, size=5
         )
 
@@ -167,7 +167,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_templates_api_error(self, mock_request):
         """Test API error during template retrieval."""
         mock_api_error = {
@@ -176,12 +176,12 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(401, mock_api_error)
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.get_templates()
+            self.client.get()
 
         assert exc_info.value.error_code == "UNAUTHORIZED"
         assert "Invalid API key" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_templates_network_error(self, mock_request):
         """Test network error during template retrieval."""
         from requests.exceptions import ConnectionError
@@ -189,11 +189,11 @@ class TestTemplatesManager:
         mock_request.side_effect = ConnectionError("Connection failed")
 
         with pytest.raises(SirenSDKError) as exc_info:
-            self.manager.get_templates()
+            self.client.get()
 
         assert "Connection failed" in exc_info.value.message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_create_template_success(self, mock_request):
         """Test successful template creation."""
         mock_api_response = {
@@ -214,7 +214,7 @@ class TestTemplatesManager:
         }
         mock_request.return_value = mock_response(200, mock_api_response)
 
-        result = self.manager.create_template(
+        result = self.client.create(
             name="Test_Create_Template",
             description="A test template",
             tag_names=["test", "creation"],
@@ -264,7 +264,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_create_template_api_error(self, mock_request):
         """Test API error during template creation."""
         mock_api_error = {
@@ -273,19 +273,19 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(400, mock_api_error)
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.create_template(name="Invalid Template")
+            self.client.create(name="Invalid Template")
 
         assert exc_info.value.error_code == "BAD_REQUEST"
         assert "Bad request" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_delete_template_success(self, mock_request):
         """Test successful template deletion (204 No Content)."""
         # Mock 204 response with empty body
         mock_request.return_value = mock_response(204, "")
 
         template_id = "tpl_delete_123"
-        result = self.manager.delete_template(template_id)
+        result = self.client.delete(template_id)
 
         assert result is True
 
@@ -299,7 +299,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_delete_template_not_found(self, mock_request):
         """Test template deletion with 404 error."""
         mock_api_error = {
@@ -310,12 +310,12 @@ class TestTemplatesManager:
         template_id = "tpl_not_found"
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.delete_template(template_id)
+            self.client.delete(template_id)
 
         assert exc_info.value.error_code == "NOT_FOUND"
         assert "Template not found" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_update_template_success(self, mock_request):
         """Test successful template update."""
         mock_api_response = {
@@ -338,7 +338,7 @@ class TestTemplatesManager:
 
         template_id = "tpl_xyz789"
 
-        result = self.manager.update_template(
+        result = self.client.update(
             template_id,
             name="Updated_Test_Template",
             description="An updated test template",
@@ -368,7 +368,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_publish_template_success(self, mock_request):
         """Test successful template publishing."""
         template_id = "tpl_pub_success"
@@ -396,7 +396,7 @@ class TestTemplatesManager:
         }
         mock_request.return_value = mock_response(200, mock_api_response)
 
-        result = self.manager.publish_template(template_id)
+        result = self.client.publish(template_id)
 
         assert isinstance(result, Template)
         assert result.id == template_id
@@ -414,7 +414,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_publish_template_not_found(self, mock_request):
         """Test template publishing with 404 error."""
         template_id = "tpl_not_found"
@@ -424,12 +424,12 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(404, mock_api_error)
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.publish_template(template_id)
+            self.client.publish(template_id)
 
         assert exc_info.value.error_code == "NOT_FOUND"
         assert "Template not found" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_publish_template_bad_request(self, mock_request):
         """Test template publishing with 400 error."""
         template_id = "tpl_bad_request"
@@ -442,12 +442,12 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(400, mock_api_error)
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.publish_template(template_id)
+            self.client.publish(template_id)
 
         assert exc_info.value.error_code == "BAD_REQUEST"
         assert "Template has no versions to publish" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_create_channel_templates_success(self, mock_request):
         """Test successful creation of channel templates."""
         mock_input_data = {
@@ -496,7 +496,7 @@ class TestTemplatesManager:
         }
         mock_request.return_value = mock_response(200, mock_response_data)
 
-        result = self.manager.create_channel_templates("template123", **mock_input_data)
+        result = self.client.create_channel_templates("template123", **mock_input_data)
 
         assert len(result) == 2
         assert result[0].channel == "SMS"
@@ -513,7 +513,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_create_channel_templates_api_error(self, mock_request):
         """Test API error during channel templates creation."""
         mock_api_error = {
@@ -525,14 +525,14 @@ class TestTemplatesManager:
         mock_request.return_value = mock_response(400, mock_api_error)
 
         with pytest.raises(SirenAPIError) as exc_info:
-            self.manager.create_channel_templates(
+            self.client.create_channel_templates(
                 "template123", SMS={"body": "test"}, INVALID_CHANNEL={"body": "invalid"}
             )
 
         assert exc_info.value.error_code == "BAD_REQUEST"
         assert "Invalid channel configuration" in exc_info.value.api_message
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_channel_templates_success(self, mock_request):
         """Test successful retrieval of channel templates."""
         mock_response_data = {
@@ -563,7 +563,7 @@ class TestTemplatesManager:
         }
         mock_request.return_value = mock_response(200, mock_response_data)
 
-        result = self.manager.get_channel_templates("version123")
+        result = self.client.get_channel_templates("version123")
 
         assert len(result) == 2
         assert result[0].channel == "SMS"
@@ -577,7 +577,7 @@ class TestTemplatesManager:
             timeout=10,
         )
 
-    @patch("siren.managers.base.requests.request")
+    @patch("siren.clients.base.requests.request")
     def test_get_channel_templates_with_params(self, mock_request):
         """Test get channel templates with query parameters."""
         mock_response_data = {
@@ -597,7 +597,7 @@ class TestTemplatesManager:
         }
         mock_request.return_value = mock_response(200, mock_response_data)
 
-        result = self.manager.get_channel_templates(
+        result = self.client.get_channel_templates(
             "version123", channel="EMAIL", page=0, size=5
         )
 

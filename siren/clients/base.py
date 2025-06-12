@@ -1,4 +1,4 @@
-"""Base manager class for all Siren API managers."""
+"""Base client class for all Siren API clients."""
 
 from typing import Any, Dict, Optional, Type, Union
 
@@ -8,11 +8,11 @@ from pydantic import BaseModel, ValidationError
 from ..exceptions import SirenAPIError, SirenSDKError
 
 
-class BaseManager:
-    """Base class for all API managers with common HTTP handling."""
+class BaseClient:
+    """Base class for all API clients with common HTTP handling."""
 
     def __init__(self, api_key: str, base_url: str, timeout: int = 10):
-        """Initialize the BaseManager.
+        """Initialize the BaseClient.
 
         Args:
             api_key: The API key for authentication.
