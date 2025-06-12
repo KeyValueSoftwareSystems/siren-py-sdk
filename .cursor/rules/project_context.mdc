@@ -66,7 +66,7 @@ siren-ai/
 - **Authentication**: Bearer token in `Authorization` header
 - **Status Handling**: Explicit `if status_code == 200` checks instead of `response.ok`
 - **API Versioning**: Templates/Users/Messaging/Webhooks use `/api/v1/public/`, Workflows use `/api/v2/`
-- **Base URL**: `https://api.dev.trysiren.io` (TODO: auto-select based on API key type)
+- **Environment Support**: Production (`https://api.trysiren.io`) default, dev (`https://api.dev.trysiren.io`) via `env="dev"` or `SIREN_ENV=dev`
 
 ## Tech Stack
 
@@ -95,8 +95,6 @@ siren-ai/
 ## TODO / Future Areas
 
 **Architecture Enhancements**:
-- Migrate WorkflowsManager to BaseManager pattern
-- Auto-select API URL based on API key type (dev/prod) or environment variable
 - Add retry logic for transient network failures
 - Add request/response logging capabilities
 

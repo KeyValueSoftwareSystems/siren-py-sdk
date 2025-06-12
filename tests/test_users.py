@@ -27,7 +27,7 @@ def users_manager():
 @pytest.fixture
 def siren_client():
     """Fixture to create a SirenClient instance."""
-    return SirenClient(api_key=MOCK_API_KEY)
+    return SirenClient(api_key=MOCK_API_KEY, env="dev")
 
 
 def mock_response(
