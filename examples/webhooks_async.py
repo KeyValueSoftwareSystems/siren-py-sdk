@@ -1,7 +1,6 @@
 """Asynchronous usage example: configuring webhooks with Siren SDK."""
 
 import asyncio
-import os
 
 from dotenv import load_dotenv
 
@@ -13,9 +12,8 @@ async def main() -> None:
     """Run a simple webhook configuration flow."""
     load_dotenv()
 
-    api_key = os.getenv("SIREN_API_KEY")
-
-    client = AsyncSirenClient(api_key=api_key, env=os.getenv("SIREN_ENV", "dev"))
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    client = AsyncSirenClient()
 
     try:
         # Configure notifications webhook

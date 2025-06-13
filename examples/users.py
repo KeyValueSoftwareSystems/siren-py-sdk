@@ -60,12 +60,8 @@ def delete_user_example(client: SirenClient, unique_id: str) -> None:
 
 
 if __name__ == "__main__":
-    api_key = os.environ.get("SIREN_API_KEY")
-    if not api_key:
-        print("Error: SIREN_API_KEY environment variable not set.")
-        sys.exit(1)
-
-    client = SirenClient(api_key=api_key)
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    client = SirenClient()
 
     unique_id = add_user_example(client)
     if unique_id:

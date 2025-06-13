@@ -1,8 +1,5 @@
 """Examples for configuring webhooks using the Siren SDK."""
 
-import os
-import sys
-
 from dotenv import load_dotenv
 
 from siren import SirenClient
@@ -39,12 +36,8 @@ def configure_inbound_message_webhook_example(client: SirenClient, webhook_url: 
 
 if __name__ == "__main__":
     load_dotenv()
-    api_key = os.getenv("SIREN_API_KEY")
-    if not api_key:
-        print("Error: SIREN_API_KEY not found in environment variables or .env file.")
-        sys.exit(1)
-
-    siren_client = SirenClient(api_key=api_key)
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    siren_client = SirenClient()
 
     example_webhook_url = "https://siren-ai-test.example.com/siren123"
 

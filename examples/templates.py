@@ -110,12 +110,8 @@ def delete_template_example(client: SirenClient, template_id: str):
 
 
 if __name__ == "__main__":
-    api_key = os.environ.get("SIREN_API_KEY")
-    if not api_key:
-        print("Error: SIREN_API_KEY environment variable not set.")
-        sys.exit(1)
-
-    client = SirenClient(api_key=api_key)
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    client = SirenClient()
 
     get_templates_example(client)
     template_id = create_template_example(client)

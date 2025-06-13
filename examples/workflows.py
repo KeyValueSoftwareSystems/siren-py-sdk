@@ -60,12 +60,8 @@ def schedule_workflow_example(client: SirenClient) -> None:
 
 
 if __name__ == "__main__":
-    api_key = os.environ.get("SIREN_API_KEY")
-    if not api_key:
-        print("Error: SIREN_API_KEY environment variable not set.")
-        sys.exit(1)
-
-    client = SirenClient(api_key=api_key)
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    client = SirenClient()
 
     # trigger_workflow_example(client)
     # trigger_bulk_workflow_example(client)

@@ -1,7 +1,6 @@
 """Asynchronous example: add, update, delete user."""
 
 import asyncio
-import os
 
 from dotenv import load_dotenv
 
@@ -12,9 +11,9 @@ from siren.exceptions import SirenAPIError, SirenSDKError
 async def main() -> None:
     """Add, update, delete a user asynchronously."""
     load_dotenv()
-    api_key = os.getenv("SIREN_API_KEY")
 
-    client = AsyncSirenClient(api_key=api_key, env=os.getenv("SIREN_ENV", "dev"))
+    # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
+    client = AsyncSirenClient()
 
     try:
         # Add user

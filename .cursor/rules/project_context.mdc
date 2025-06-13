@@ -7,7 +7,7 @@ alwaysApply: false
 
 ## Project Summary
 
-Official Python SDK for the [Siren notification platform](https://docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
+Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
 
 ## Key Features / Functional Modules
 
@@ -67,7 +67,7 @@ siren-ai/
 - **Authentication**: Bearer token in `Authorization` header
 - **Status Handling**: Explicit `if status_code == 200` checks instead of `response.ok`
 - **API Versioning**: Templates/Users/Messaging/Webhooks use `/api/v1/public/`, Workflows use `/api/v2/`
-- **Environment Support**: Production (`https://api.trysiren.io`) default, dev (`https://api.dev.trysiren.io`) via `env="dev"` or `SIREN_ENV=dev`
+- **Environment Support**: Both `SirenClient` *and* `AsyncSirenClient` automatically read `SIREN_API_KEY` and optional `SIREN_ENV` on instantiation. Production (`https://api.trysiren.io`) is the default; switch to dev (`https://api.dev.trysiren.io`) by setting `SIREN_ENV=dev` or passing `env="dev"` explicitly.
 
 ## Tech Stack
 
@@ -105,8 +105,8 @@ siren-ai/
 ## Documentation / Examples
 
 **Example Script Guidelines**:
-- Call `dotenv.load_dotenv()` first, then read `SIREN_API_KEY` (and optional `SIREN_ENV`).
-- Instantiate the appropriate sync (`SirenClient`) or async (`AsyncSirenClient`) client with those env values.
+- Call `dotenv.load_dotenv()` first so environment variables from a `.env` file are available.
+- Instantiate the sync (`SirenClient()`) or async (`AsyncSirenClient()`) client **without arguments** – the constructor will pick up `SIREN_API_KEY` & `SIREN_ENV` automatically.
 - Wrap core SDK calls in minimal error handling:
   ```python
   try:

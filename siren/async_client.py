@@ -27,14 +27,24 @@ class AsyncSirenClient:  # noqa: D101
         "prod": "https://api.trysiren.io",
     }
 
-    def __init__(self, api_key: str, env: Literal["dev", "prod"] | None = None):
+    def __init__(
+        self,
+        *,
+        api_key: str | None = None,
+        env: Literal["dev", "prod"] | None = None,
+    ):
         """Create a new *asynchronous* Siren client.
 
         Args:
-            api_key: Bearer token obtained from the Siren dashboard.
-            env: Target environment – ``"dev"`` (default when ``SIREN_ENV=dev``)
-                or ``"prod"`` (default).
+            api_key: Siren API key. If ``None``, falls back to the ``SIREN_API_KEY`` env-var.
+            env: Deployment environment – ``"dev"`` or ``"prod"``. If ``None``, uses ``SIREN_ENV`` or defaults to ``"prod"``.
         """
+        if api_key is None:
+            api_key = os.getenv("SIREN_API_KEY")
+        if api_key is None:
+            raise ValueError(
+                "The api_key must be set either by passing api_key to the client or by setting the SIREN_API_KEY environment variable"
+            )
         self.api_key = api_key
 
         if env is None:

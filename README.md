@@ -22,7 +22,9 @@ pip install siren-ai
 ```python
 from siren import SirenClient
 
-client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
+
+# Uses SIREN_API_KEY and SIREN_ENV environment variables
+client = SirenClient()
 
 message_id = client.message.send(
     template_name="welcome_email",
@@ -34,11 +36,18 @@ message_id = client.message.send(
 print("Sent:", message_id)
 ```
 
+```python
+# You can also do:
+client = SirenClient(api_key="YOUR_SIREN_API_KEY") # default env is "prod"
+
+# Or:
+client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
+```
 ### Asynchronous
 ```python
 from siren import AsyncSirenClient
 
-client = AsyncSirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
+client = AsyncSirenClient()
 
 message_id = await client.message.send(
     template_name="welcome_email",

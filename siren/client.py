@@ -20,14 +20,25 @@ class SirenClient:
         "prod": "https://api.trysiren.io",
     }
 
-    def __init__(self, api_key: str, env: Optional[Literal["dev", "prod"]] = None):
+    def __init__(
+        self,
+        *,
+        api_key: Optional[str] = None,
+        env: Optional[Literal["dev", "prod"]] = None,
+    ):
         """Initialize the SirenClient.
 
         Args:
-            api_key: The API key for authentication.
-            env: Environment to use ('dev' or 'prod').
-                 If not provided, defaults to 'prod' or uses SIREN_ENV environment variable.
+            api_key: The API key for authentication. If not provided, will be read from SIREN_API_KEY environment variable.
+            env: Environment to use ('dev' or 'prod'). If not provided, defaults to 'prod' or uses SIREN_ENV environment variable.
         """
+        # Get API key from environment if not provided
+        if api_key is None:
+            api_key = os.getenv("SIREN_API_KEY")
+        if api_key is None:
+            raise ValueError(
+                "The api_key must be set either by passing api_key to the client or by setting the SIREN_API_KEY environment variable"
+            )
         self.api_key = api_key
 
         # Determine environment and base URL
@@ -41,6 +52,8 @@ class SirenClient:
 
         self.env = env
         self.base_url = self.API_URLS[env]
+
+        # Initialize API clients
         self._template_client = TemplateClient(
             api_key=self.api_key, base_url=self.base_url
         )
