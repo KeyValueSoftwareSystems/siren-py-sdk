@@ -26,14 +26,22 @@ from siren import SirenClient
 # Uses SIREN_API_KEY and SIREN_ENV environment variables
 client = SirenClient()
 
+# Send a direct message without template
 message_id = client.message.send(
-    template_name="welcome_email",
-    channel="EMAIL",
     recipient_type="direct",
-    recipient_value="user@example.com",
-    template_variables={"user_name": "John Doe"},
+    recipient_value="alice@company.com",
+    channel="EMAIL",
+    body="Your account has been successfully verified. You can now access all features."
 )
-print("Sent:", message_id)
+
+# Send a message using a template
+message_id = client.message.send(
+    recipient_type="direct",
+    recipient_value="U01UBCD06BB",
+    channel="SLACK",
+    template_name="welcome_template",
+    template_variables={"user_name": "John"},
+)
 ```
 
 ```python
@@ -50,13 +58,11 @@ from siren import AsyncSirenClient
 client = AsyncSirenClient()
 
 message_id = await client.message.send(
-    template_name="welcome_email",
-    channel="EMAIL",
     recipient_type="direct",
-    recipient_value="user@example.com",
-    template_variables={"user_name": "John Doe"},
+    recipient_value="alice@company.com",
+    channel="EMAIL",
+    body="Your account has been successfully verified. You can now access all features."
 )
-print("Sent:", message_id)
 
 await client.aclose()
 ```
@@ -150,7 +156,8 @@ For testing the SDK, set these environment variables:
      ```
 
      You are now ready to contribute to the `siren-ai` SDK!
-     Try `$ python examples/webhooks.py`
+
+     Try `$ python examples/messaging_async.py`
 
 ### Code Style & Linting
 
@@ -172,3 +179,7 @@ This will execute all tests defined in the `tests/` directory.
 *   Create a feature branch for your changes.
 *   Commit your changes (pre-commit hooks will run).
 *   Push your branch and open a Pull Request against the `develop` repository branch.
+
+
+## Changes planned
+- Check how critical is .close() for async client, explore ways to avoid that.

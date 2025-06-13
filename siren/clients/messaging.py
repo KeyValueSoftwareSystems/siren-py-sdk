@@ -1,10 +1,11 @@
 """Messaging client for the Siren SDK."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from ..models.messaging import (
     MessageRepliesResponse,
     MessageStatusResponse,
+    Recipient,
     ReplyData,
     SendMessageRequest,
     SendMessageResponse,
@@ -17,20 +18,23 @@ class MessageClient(BaseClient):
 
     def send(
         self,
-        template_name: str,
-        channel: str,
-        recipient_type: str,
+        recipient_type: Literal["user_id", "direct"],
         recipient_value: str,
+        channel: str,
+        *,
+        body: Optional[str] = None,
+        template_name: Optional[str] = None,
         template_variables: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Send a message using a specific template.
+        """Send a message either using a template or directly.
 
         Args:
-            template_name: The name of the template to use.
-            channel: The channel to send the message through (e.g., "SLACK", "EMAIL").
-            recipient_type: The type of recipient (e.g., "direct").
-            recipient_value: The identifier for the recipient (e.g., Slack user ID, email address).
-            template_variables: A dictionary of variables to populate the template.
+            recipient_type: The type of recipient ("user_id" or "direct")
+            recipient_value: The identifier for the recipient (e.g., Slack user ID, email address)
+            channel: The channel to send the message through (e.g., "SLACK", "EMAIL")
+            body: Optional message body text (required if no template)
+            template_name: Optional template name (required if no body)
+            template_variables: Optional template variables for template-based messages
 
         Returns:
             The message ID of the sent message.
@@ -38,14 +42,20 @@ class MessageClient(BaseClient):
         Raises:
             SirenAPIError: If the API returns an error response.
             SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
+            ValueError: If neither body nor template_name is provided
         """
+        recipient = Recipient(type=recipient_type, value=recipient_value)
         payload = {
-            "template": {"name": template_name},
-            "recipient": {"type": recipient_type, "value": recipient_value},
+            "recipient": recipient.model_dump(),
             "channel": channel,
         }
-        if template_variables is not None:
-            payload["template_variables"] = template_variables
+
+        if body is not None:
+            payload["body"] = body
+        elif template_name is not None:
+            payload["template"] = {"name": template_name}
+            if template_variables is not None:
+                payload["template_variables"] = template_variables
 
         response = self._make_request(
             method="POST",
