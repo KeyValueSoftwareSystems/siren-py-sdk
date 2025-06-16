@@ -85,7 +85,7 @@ The Siren-AI Python SDK provides a clean, namespaced interface to interact with 
 - **`client.channel_template.get()`** - Retrieves channel templates for a specific template version
 
 **Messaging** (`client.message.*`)
-- **`client.message.send()`** - Sends a message using a template to a recipient via a chosen channel
+- **`client.message.send()`** - Sends a message (with or without a template) to a recipient via a chosen channel
 - **`client.message.get_replies()`** - Retrieves replies for a specific message ID
 - **`client.message.get_status()`** - Retrieves the status of a specific message (SENT, DELIVERED, FAILED, etc.)
 
