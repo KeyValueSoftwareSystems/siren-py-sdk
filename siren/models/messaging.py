@@ -66,7 +66,7 @@ class SendMessageRequest(BaseModel):
     )
     template_identifier: Optional[str] = Field(alias="templateIdentifier", default=None)
     provider_name: Optional[str] = Field(alias="providerName", default=None)
-    provider_code: Optional[str] = Field(alias="providerCode", default=None)
+    provider_code: Optional[ProviderCode] = Field(alias="providerCode", default=None)
 
     @model_validator(mode="after")
     def validate_message_content(self) -> "SendMessageRequest":

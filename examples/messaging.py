@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 from siren import SirenClient
 from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.models.messaging import ProviderCode
 
 
 def send_direct_message_example(client: SirenClient) -> str:
@@ -14,6 +15,8 @@ def send_direct_message_example(client: SirenClient) -> str:
             recipient_value="U01UBCD06BB",
             channel="SLACK",
             body="Hello! This is a direct message without template.",
+            provider_name="slack",  # Optional, if not provided, the default provider will be used
+            provider_code=ProviderCode.SLACK,  # Optional, if not provided, the default provider will be used
         )
         print(f"Message sent: {message_id}")
         return message_id
@@ -43,6 +46,8 @@ def send_template_message_example(client: SirenClient) -> str:
             channel="SLACK",
             template_name="sampleTemplate",
             template_variables={"user_name": "Alan"},
+            provider_name="slack",  # Optional, if not provided, the default provider will be used
+            provider_code=ProviderCode.SLACK,  # Optional, if not provided, the default provider will be used
         )
         print(f"Message sent: {message_id}")
         return message_id

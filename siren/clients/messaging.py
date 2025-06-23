@@ -25,6 +25,8 @@ class MessageClient(BaseClient):
         body: Optional[str] = None,
         template_name: Optional[str] = None,
         template_variables: Optional[Dict[str, Any]] = None,
+        provider_name: Optional[str] = None,
+        provider_code: Optional[ProviderCode] = None,
     ) -> str:
         """Send a message either using a template or directly.
 
@@ -34,6 +36,8 @@ class MessageClient(BaseClient):
             body: Optional message body text (required if no template)
             template_name: Optional template name (required if no body)
             template_variables: Optional template variables for template-based messages
+            provider_name: Optional provider name (must be provided with provider_code)
+            provider_code: Optional provider code from ProviderCode enum (must be provided with provider_name)
 
         Returns:
             The message ID of the sent message.
@@ -43,6 +47,12 @@ class MessageClient(BaseClient):
             SirenSDKError: If there's an SDK-level issue (network, parsing, etc).
             ValueError: If neither body nor template_name is provided
         """
+        # Validate that both provider arguments are provided together
+        if (provider_name is not None) != (provider_code is not None):
+            raise ValueError(
+                "Both provider_name and provider_code must be provided together"
+            )
+
         recipient = Recipient(value=recipient_value)
         payload = {
             "recipient": recipient.model_dump(),
@@ -55,6 +65,10 @@ class MessageClient(BaseClient):
             payload["template"] = {"name": template_name}
             if template_variables is not None:
                 payload["template_variables"] = template_variables
+
+        if provider_name is not None and provider_code is not None:
+            payload["provider_name"] = provider_name
+            payload["provider_code"] = provider_code.value
 
         response = self._make_request(
             method="POST",
@@ -115,7 +129,7 @@ class MessageClient(BaseClient):
 
         response = self._make_request(
             method="POST",
-            endpoint="/api/v1/public/send-messages",
+            endpoint="/api/v1/public/send-awesome-messages",
             request_model=SendMessageRequest,
             response_model=SendMessageResponse,
             data=payload,
