@@ -21,14 +21,13 @@ class AsyncMessageClient(AsyncBaseClient):
         self,
         template_name: str,
         channel: str,
-        recipient_type: str,
         recipient_value: str,
         template_variables: dict[str, Any] | None = None,
     ) -> str:
         """Send a message and return the notification ID."""
         payload: dict[str, Any] = {
             "template": {"name": template_name},
-            "recipient": {"type": recipient_type, "value": recipient_value},
+            "recipient": {"value": recipient_value},
             "channel": channel,
         }
         if template_variables is not None:

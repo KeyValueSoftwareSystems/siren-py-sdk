@@ -34,7 +34,6 @@ class TestMessageClient:
         result = self.client.send(
             template_name="test_template",
             channel="SLACK",
-            recipient_type="direct",
             recipient_value="U123ABC",
             template_variables={"name": "John"},
         )
@@ -126,7 +125,6 @@ class TestMessageClient:
             self.client.send(
                 template_name="nonexistent",
                 channel="SLACK",
-                recipient_type="direct",
                 recipient_value="U123",
             )
 
@@ -149,7 +147,6 @@ class TestMessageClient:
         result = self.client.send(
             template_name="simple_template",
             channel="EMAIL",
-            recipient_type="direct",
             recipient_value="test@example.com",
         )
 
@@ -187,7 +184,6 @@ class TestMessageClient:
             self.client.send(
                 template_name="test",
                 channel="SLACK",
-                recipient_type="direct",
                 recipient_value="U123",
             )
 

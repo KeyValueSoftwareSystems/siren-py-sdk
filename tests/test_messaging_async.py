@@ -29,7 +29,6 @@ async def test_async_send_message_success():
     msg_id = await client.message.send(
         template_name="ai_summary",
         channel="EMAIL",
-        recipient_type="direct",
         recipient_value="user@example.com",
     )
 
