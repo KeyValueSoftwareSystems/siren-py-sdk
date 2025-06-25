@@ -160,8 +160,8 @@ For testing the SDK, set these environment variables:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/jithu-keyvalue/siren-ai.git
-    cd siren-ai
+    git clone https://github.com/KeyValueSoftwareSystems/siren-py-sdk.git
+    cd siren-py-sdk
     ```
 
 2.  **Create a virtual environment using `uv`:**
