@@ -11,11 +11,10 @@ def send_direct_message_example(client: SirenClient) -> str:
     """Example of sending a direct message to a Slack user."""
     try:
         message_id = client.message.send(
-            recipient_type="direct",
-            recipient_value="U01UBCD06BB",
+            recipient_value="U08FK1G6DGE",
             channel="SLACK",
             body="Hello! This is a direct message without template.",
-            provider_name="slack",  # Optional, if not provided, the default provider will be used
+            provider_name="slack-test-py-sdk",  # Optional, if not provided, the default provider will be used
             provider_code=ProviderCode.SLACK,  # Optional, if not provided, the default provider will be used
         )
         print(f"Message sent: {message_id}")
@@ -41,12 +40,11 @@ def send_template_message_example(client: SirenClient) -> str:
     """Example of sending a message using a template."""
     try:
         message_id = client.message.send(
-            recipient_type="direct",
-            recipient_value="U01UBCD06BB",
+            recipient_value="U08FK1G6DGE",
             channel="SLACK",
             template_name="sampleTemplate",
             template_variables={"user_name": "Alan"},
-            provider_name="slack",  # Optional, if not provided, the default provider will be used
+            provider_name="slack-test-py-sdk",  # Optional, if not provided, the default provider will be used
             provider_code=ProviderCode.SLACK,  # Optional, if not provided, the default provider will be used
         )
         print(f"Message sent: {message_id}")

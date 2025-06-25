@@ -52,8 +52,8 @@ class MessageClient(BaseClient):
             raise ValueError(
                 "Both provider_name and provider_code must be provided together"
             )
-
-        recipient = Recipient(value=recipient_value)
+        
+        recipient = self._create_recipient(channel, recipient_value)
         payload = {
             "recipient": recipient.model_dump(),
             "channel": channel,
@@ -64,11 +64,13 @@ class MessageClient(BaseClient):
         elif template_name is not None:
             payload["template"] = {"name": template_name}
             if template_variables is not None:
-                payload["template_variables"] = template_variables
+                payload["templateVariables"] = template_variables
 
         if provider_name is not None and provider_code is not None:
-            payload["provider_name"] = provider_name
-            payload["provider_code"] = provider_code.value
+            payload["providerIntegration"] = {
+                "code": provider_code.value,
+                "name": provider_name,
+            }
 
         response = self._make_request(
             method="POST",
@@ -113,19 +115,21 @@ class MessageClient(BaseClient):
                 "Both provider_name and provider_code must be provided together"
             )
 
-        recipient = Recipient(value=recipient_value)
+        recipient = self._create_recipient(channel, recipient_value)    
         payload = {
-            "recipient": recipient.model_dump(),
             "channel": channel,
-            "template_identifier": template_identifier,
+            "templateIdentifier": template_identifier,
+            "recipient": recipient.model_dump(exclude_none=True),
         }
 
         if template_variables is not None:
-            payload["template_variables"] = template_variables
+            payload["templateVariables"] = template_variables
 
         if provider_name is not None and provider_code is not None:
-            payload["provider_name"] = provider_name
-            payload["provider_code"] = provider_code.value
+            payload["providerIntegration"] = {
+                "code": provider_code.value,
+                "name": provider_name,
+            }
 
         response = self._make_request(
             method="POST",
@@ -175,3 +179,36 @@ class MessageClient(BaseClient):
             response_model=MessageRepliesResponse,
         )
         return response
+    
+    def _create_recipient(self, channel: str, recipient_value: str) -> Recipient:
+            """Create a Recipient object based on the channel and recipient value.
+            
+            Args:
+                channel: The channel to send the message through (e.g., "SLACK", "EMAIL")
+                recipient_value: The identifier for the recipient (e.g., Slack user ID, email address)
+                
+            Returns:
+                A Recipient object configured for the specified channel
+                
+            Raises:
+                ValueError: If the channel is not supported
+            """
+            channel_to_recipient_key = {
+                "EMAIL": "email",
+                "SMS": "sms", 
+                "WHATSAPP": "whatsapp",
+                "SLACK": "slack",
+                "TEAMS": "teams",
+                "DISCORD": "discord",
+                "LINE": "line",
+                "IN_APP": "inApp",
+                "PUSH": "pushToken",
+            }
+            
+            recipient_key = channel_to_recipient_key.get(channel.upper())
+            if recipient_key is None:
+                raise ValueError(f"Unsupported channel: {channel}")
+            
+            # Create recipient with only the relevant field
+            recipient_data = {recipient_key: recipient_value}
+            return Recipient(**recipient_data)

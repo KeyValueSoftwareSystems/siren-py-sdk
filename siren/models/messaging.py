@@ -46,9 +46,16 @@ class TemplateInfo(BaseModel):
 
 class Recipient(BaseModel):
     """Recipient information for messaging."""
+    # type: str = "direct"  # Default to "direct", can be "user_id" or other values
+    slack: str | None = None
+    email: str | None = None
 
-    # type: Literal["user_id", "direct"]
-    value: str
+
+class ProviderIntegration(BaseModel):
+    """Provider integration information."""
+    
+    name: str
+    code: str
 
 
 class SendMessageRequest(BaseModel):
@@ -57,31 +64,31 @@ class SendMessageRequest(BaseModel):
     # Fix: template_variables was silently becoming None during model creation
     model_config = ConfigDict(populate_by_name=True)
 
-    recipient: Recipient
     channel: str
     body: Optional[str] = None
     template: Optional[TemplateInfo] = None
     template_variables: Optional[Dict[str, Any]] = Field(
         alias="templateVariables", default=None
     )
+    recipient: Recipient
     template_identifier: Optional[str] = Field(alias="templateIdentifier", default=None)
-    provider_name: Optional[str] = Field(alias="providerName", default=None)
-    provider_code: Optional[ProviderCode] = Field(alias="providerCode", default=None)
+    template_path: Optional[str] = Field(alias="templatePath", default=None)
+    provider_integration: Optional[ProviderIntegration] = Field(alias="providerIntegration", default=None)
 
     @model_validator(mode="after")
     def validate_message_content(self) -> "SendMessageRequest":
         """Validate that either body, template, or template_identifier is provided."""
-        if not self.body and not self.template and not self.template_identifier:
+        if not self.body and not self.template and not self.template_identifier and not self.template_path:
             raise ValueError(
-                "Either body, template, or template_identifier must be provided"
+                "Either body, template,template_path or template_identifier must be provided"
             )
         return self
 
     @model_validator(mode="after")
     def validate_provider_fields(self) -> "SendMessageRequest":
         """Validate that both provider_name and provider_code are provided together."""
-        has_provider_name = self.provider_name is not None
-        has_provider_code = self.provider_code is not None
+        has_provider_name = self.provider_integration is not None and self.provider_integration.name is not None
+        has_provider_code = self.provider_integration is not None and self.provider_integration.code is not None
 
         if has_provider_name != has_provider_code:
             raise ValueError(
@@ -89,7 +96,6 @@ class SendMessageRequest(BaseModel):
             )
 
         return self
-
 
 class MessageData(BaseModel):
     """Message response data."""
