@@ -28,7 +28,6 @@ client = SirenClient()
 
 # Send a direct message without template
 message_id = client.message.send(
-    recipient_type="direct",
     recipient_value="alice@company.com",
     channel="EMAIL",
     body="Your account has been successfully verified. You can now access all features."
@@ -36,11 +35,36 @@ message_id = client.message.send(
 
 # Send a message using a template
 message_id = client.message.send(
-    recipient_type="direct",
     recipient_value="U01UBCD06BB",
     channel="SLACK",
     template_name="welcome_template",
     template_variables={"user_name": "John"},
+)
+
+# Send a message with specific provider
+from siren.models.messaging import ProviderCode
+message_id = client.message.send(
+    recipient_value="alice@company.com",
+    channel="EMAIL",
+    body="Your account has been successfully verified.",
+    provider_name="email-provider",
+    provider_code=ProviderCode.EMAIL_SENDGRID,
+)
+
+# Send a message using awesome template
+message_id = client.message.send_awesome_template(
+    recipient_value="U01UBCD06BB",
+    channel="SLACK",
+    template_identifier="awesome-templates/customer-support/escalation_required/official/casual.yaml",
+    template_variables={
+        "ticket_id": "123456",
+        "customer_name": "John",
+        "issue_summary": "Payment processing issue",
+        "ticket_url": "https://support.company.com/ticket/123456",
+        "sender_name": "Support Team"
+    },
+    provider_name="slack-provider",
+    provider_code=ProviderCode.SLACK,
 )
 ```
 
@@ -51,20 +75,29 @@ client = SirenClient(api_key="YOUR_SIREN_API_KEY") # default env is "prod"
 # Or:
 client = SirenClient(api_key="YOUR_SIREN_API_KEY", env="dev")
 ```
+
 ### Asynchronous
 ```python
 from siren import AsyncSirenClient
 
+# Using async context manager (recommended)
+async with AsyncSirenClient() as client:
+    message_id = await client.message.send(
+        recipient_value="alice@company.com",
+        channel="EMAIL",
+        body="Your account has been successfully verified. You can now access all features."
+    )
+
+# Or manually managing the client
 client = AsyncSirenClient()
-
-message_id = await client.message.send(
-    recipient_type="direct",
-    recipient_value="alice@company.com",
-    channel="EMAIL",
-    body="Your account has been successfully verified. You can now access all features."
-)
-
-await client.aclose()
+try:
+    message_id = await client.message.send(
+        recipient_value="alice@company.com",
+        channel="EMAIL",
+        body="Your account has been successfully verified. You can now access all features."
+    )
+finally:
+    await client.aclose()
 ```
 
 All synchronous methods have a 1-to-1 asynchronous equivalent—just `await` them on the async client.
@@ -86,6 +119,7 @@ The Siren-AI Python SDK provides a clean, namespaced interface to interact with 
 
 **Messaging** (`client.message.*`)
 - **`client.message.send()`** - Sends a message (with or without a template) to a recipient via a chosen channel
+- **`client.message.send_awesome_template()`** - Sends a message using a template path/identifier
 - **`client.message.get_replies()`** - Retrieves replies for a specific message ID
 - **`client.message.get_status()`** - Retrieves the status of a specific message (SENT, DELIVERED, FAILED, etc.)
 

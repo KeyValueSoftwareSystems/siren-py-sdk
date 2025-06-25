@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from siren.async_client import AsyncSirenClient
 from siren.exceptions import SirenAPIError, SirenSDKError
+from siren.models.messaging import ProviderCode
 
 
 async def main() -> None:
@@ -20,9 +21,10 @@ async def main() -> None:
         message_id = await client.message.send(
             template_name="sampleTemplate",
             channel="SLACK",
-            recipient_type="direct",
-            recipient_value="U01UBCD06BB",
+            recipient_value="U08FK1G6DGE",
             template_variables={"user_name": "John"},
+            provider_name="slack-test-py-sdk",  
+            provider_code=ProviderCode.SLACK,
         )
         print("Sent message id:", message_id)
 
