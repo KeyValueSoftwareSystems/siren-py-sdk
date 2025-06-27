@@ -1,12 +1,18 @@
-"""Siren SDK for Python."""
+"""Siren SDK for Python.
 
-# siren/__init__.py
+Public API:
+    SirenClient – synchronous client (blocking HTTP based on *requests*).
+    AsyncSirenClient – asynchronous client (non-blocking HTTP based on *httpx*).
 
-# This file makes the 'siren' directory a Python package.
-# We will import key classes and functions here for easier access.
+Both clients expose the same domain‐specific namespaces (``.message``,
+``.template``, etc.). Choose the async variant whenever your application is
+already running inside an asyncio event-loop or needs to issue many concurrent
+requests.
+"""
 
-# For example:
-# from .client import SirenClient
-# from .templates import TemplateManager
+from .async_client import AsyncSirenClient
+from .client import SirenClient
 
-__version__ = "0.1.0"  # Placeholder version
+__all__ = ["AsyncSirenClient", "SirenClient"]
+
+__version__ = "0.2.0"

@@ -1,0 +1,129 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Context: Siren AI Python SDK
+
+## Project Summary
+
+Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
+
+## Key Features / Functional Modules
+
+- **Templates** - Create, update, delete, publish templates and channel configurations → `siren/clients/templates.py`
+- **Users** - Add, update, delete users → `siren/clients/users.py`
+- **Messaging** - Send messages, get replies, track status → `siren/clients/messaging.py`
+- **Webhooks** - Configure notification and inbound webhooks → `siren/clients/webhooks.py`
+- **Workflows** - Trigger single/bulk workflows and scheduling → `siren/clients/workflows.py`
+- **Client** - Unified API entry point → `siren/client.py`
+
+## Codebase Structure Overview
+
+```
+siren-ai/
+├── siren/                    # Main SDK package
+│   ├── client.py            # Main SirenClient - unified API entry point
+│   ├── exceptions.py        # Custom exception classes (SirenAPIError, SirenSDKError)
+│   ├── clients/            # Domain client implementations (core pattern)
+│   │   ├── base.py          # BaseClient - shared HTTP/error handling
+│   │   ├── templates.py     # TemplateClient - template operations
+│   │   ├── users.py         # UserClient - user management
+│   │   ├── messaging.py     # MessageClient - message operations
+│   │   ├── webhooks.py      # WebhookClient - webhook configuration
+│   │   └── workflows.py     # WorkflowClient - workflow operations
+│   └── models/              # Pydantic data models
+│       ├── base.py          # Base response models and common patterns
+│       ├── templates.py     # Template-specific models
+│       ├── user.py          # User-specific models
+│       ├── messaging.py     # Messaging models
+│       ├── webhooks.py      # Webhook models
+│       └── workflows.py     # Workflow models
+├── tests/                   # Comprehensive test suite with ~92% coverage
+├── examples/                # Usage examples for each module
+├── pyproject.toml          # Project configuration, dependencies, tools
+└── README.md               # Installation, usage, and API documentation
+```
+
+## Architecture & Data Flow
+
+**Layered Architecture**:
+- **Client** (`SirenClient`) - Thin facade delegating to domain clients
+- **Domain Clients** (`TemplateClient`, `UserClient`, etc.) - Domain-specific API handlers, inherit from `BaseClient` for unified HTTP/error handling
+- **Models** (Pydantic) - Request/response validation, field aliasing (snake_case ↔ camelCase)
+- **Exceptions** - `SirenAPIError` (API errors: 400/401/404) vs `SirenSDKError` (SDK issues: network/validation)
+
+**BaseClient Pattern** (Core Architecture):
+- All domain clients inherit from `BaseClient` for consistent HTTP handling
+- Requires both `request_model` and `response_model` for JSON operations
+- Automatic Pydantic validation, error handling, and response parsing
+- Common patterns: `DeleteResponse[None]` for 204 responses, flexible models with optional fields
+
+**Request Flow**: Client → Domain Client → HTTP Request → API → Response → Model → Client
+- Domain clients prepare requests with Pydantic validation → HTTP to Siren API → Responses parsed through models → Errors become structured exceptions
+
+**Implementation Details**:
+- **HTTP Client**: `requests` library with 10s timeout (hardcoded, TODO: make configurable)
+- **Authentication**: Bearer token in `Authorization` header
+- **Status Handling**: Explicit `if status_code == 200` checks instead of `response.ok`
+- **API Versioning**: Templates/Users/Messaging/Webhooks use `/api/v1/public/`, Workflows use `/api/v2/`
+- **Environment Support**: Both `SirenClient` *and* `AsyncSirenClient` automatically read `SIREN_API_KEY` and optional `SIREN_ENV` on instantiation. Production (`https://api.trysiren.io`) is the default; switch to dev (`https://api.dev.trysiren.io`) by setting `SIREN_ENV=dev` or passing `env="dev"` explicitly.
+
+## Tech Stack
+
+**Core**: Python 3.8+, `requests`, `pydantic[email]`
+**Dev Tools**: `pytest` + mocking, `ruff`, `pyright`, `pre-commit`, `uv`
+
+## Testing
+
+**Strategy**: `requests-mock` with realistic API data
+**Organization**: One test file per domain client, shared `client` fixture
+**Philosophy**: SDK testing focuses on request formatting, response parsing, error propagation - not API business logic
+
+## Key Files
+
+- **`siren/client.py`** - Main client interface
+- **`siren/clients/base.py`** - BaseClient with unified HTTP/error handling (core pattern)
+- **`siren/clients/templates.py`** - Most complex domain client, full BaseClient patterns
+- **`siren/models/base.py`** - Core models and error handling
+- **`siren/exceptions.py`** - Exception patterns
+
+## Gotchas
+
+**Field Serialization**: Always use `by_alias=True` when calling `model_dump()`
+**BaseClient Requirements**: Both request_model and response_model needed for JSON operations
+
+## TODO / Future Areas
+
+**Architecture Enhancements**:
+- Add retry logic for transient network failures
+- Add request/response logging capabilities
+
+**Testing Gaps**:
+- Integration tests against live API (currently only unit tests with mocks)
+
+## Documentation / Examples
+
+**Example Script Guidelines**:
+- Call `dotenv.load_dotenv()` first so environment variables from a `.env` file are available.
+- Instantiate the sync (`SirenClient()`) or async (`AsyncSirenClient()`) client **without arguments** – the constructor will pick up `SIREN_API_KEY` & `SIREN_ENV` automatically.
+- Wrap core SDK calls in minimal error handling:
+  ```python
+  try:
+      ...  # SDK call(s)
+  except SirenAPIError as e:
+      print(f"API error: {e.error_code} - {e.api_message}")
+  except SirenSDKError as e:
+      print(f"SDK error: {e.message}")
+  ```
+- Print only the key fields from responses (e.g., `id`, `url`, `status`) to keep output concise.
+- Scripts should demonstrate one or two primary operations per domain—avoid extra verbosity.
+
+## HTTP Transport & Sync/Async Support
+- Under the hood the SDK now uses a pluggable transport layer (`siren/http/transport.py`).
+- **Sync** clients delegate to `SyncTransport` (currently wraps `requests`, easy to flip to `httpx.Client`).
+- **Async** clients delegate to `AsyncTransport` which wraps `httpx.AsyncClient`.
+- Every domain client has a 1-to-1 async counterpart; `AsyncSirenClient` exposes them.
+- Sync and async share identical method names and signatures—just `await` the async version.
+- Testing: existing sync tests use `requests-mock`; async tests use **respx** for `httpx`.
+- Examples: each domain has both `*_async.py` and sync counterpart in `examples/` demonstrating identical flows.

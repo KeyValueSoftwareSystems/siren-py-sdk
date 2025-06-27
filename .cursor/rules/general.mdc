@@ -1,0 +1,69 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+Development Approach:
+- Make small, focused changes incrementally
+- Break complex problems into manageable pieces
+- Give concise responses, avoid verbosity
+- Don't change code unless explicitly asked
+- Follow existing patterns and conventions
+
+Code Quality:
+- Write clean, self-documenting code
+- Single responsibility per function/class
+- Make code easily unit testable
+- Consider future developers
+- Use consistent type hints
+
+Organization:
+- Use logical file structure matching domain
+- Keep files focused on single concerns
+- Follow consistent naming conventions
+- Prefer composition over inheritance
+
+Method Structure:
+- Each method should do one thing well
+- Include proper docstrings with purpose, parameters, returns, exceptions
+- Use type hints consistently
+- Handle errors explicitly and predictably
+- Keep methods small and focused
+
+Error Handling:
+- Be explicit, avoid implicit behavior
+- Use custom exception classes with clear hierarchy
+- Include enough context for debugging
+- Fail fast, detect and report errors early
+- Handle errors appropriately for the use case
+
+Testing:
+- Test success cases to verify happy path
+- Test error cases for proper error handling
+- Test edge cases and boundary conditions
+- Use realistic data resembling production scenarios
+- Keep tests focused on one concept per method
+
+Documentation:
+- Write concise, clear docstrings for public APIs
+- Comment complex logic to explain why, not what
+- Keep comments current, remove outdated ones
+- Focus on intent and reasoning behind decisions
+- Be minimal but helpful, avoid noise
+
+Code Style:
+- Follow language conventions like PEP 8 for Python
+- Use automated formatters for consistency
+- Prefer descriptive names over comments
+- Use named constants, avoid magic numbers
+- Keep code flat, avoid deep nesting
+
+Response Guidelines:
+- Start response with '<hi>'
+- Answer what's asked, don't over-engineer
+- Provide immediately runnable solutions
+- Explain trade-offs when multiple approaches exist
+- Be helpful but concise
+- Work within established architecture patterns
+- When you make structural, architectural, or functional changes, (or model changes, new decisions/gotchas, etc.) ask whether to update @project_context.mdc
+- End response with '</hi>'
