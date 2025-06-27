@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Set environment variables: SIREN_API_KEY & SIREN_ENV (or pass as arguments)
     siren_client = SirenClient()
 
-    example_webhook_url = "https://siren-ai-test.example.com/siren123"
+    example_webhook_url = "https://trysiren-test.example.com/siren123"
 
     configure_notifications_webhook_example(siren_client, example_webhook_url)
     configure_inbound_message_webhook_example(siren_client, example_webhook_url)

@@ -55,7 +55,7 @@ class TestTemplateClient:
                 },
                 {
                     "id": "11921404-4517-48b7-82ee-fcdcf8f9c03b",
-                    "name": "jithu_test1",
+                    "name": "john_test1",
                     "variables": [],
                     "tags": ["sampleTag", "tag2"],
                     "draftVersion": {
@@ -111,7 +111,7 @@ class TestTemplateClient:
         # Verify second template
         second_template = result[1]
         assert second_template.id == "11921404-4517-48b7-82ee-fcdcf8f9c03b"
-        assert second_template.name == "jithu_test1"
+        assert second_template.name == "john_test1"
         assert second_template.tags == ["sampleTag", "tag2"]
         assert second_template.draft_version.status == "DRAFT"
         assert second_template.published_version.status == "PUBLISHED_LATEST"

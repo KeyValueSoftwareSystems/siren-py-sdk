@@ -13,7 +13,7 @@ This is the official Python SDK for the [Siren notification platform](https://do
 ## Installation
 
 ```bash
-pip install siren-ai
+pip install trysiren
 ```
 
 ## Basic Usage
@@ -104,7 +104,7 @@ All synchronous methods have a 1-to-1 asynchronous equivalent—just `await` the
 
 ## SDK Methods
 
-The Siren-AI Python SDK provides a clean, namespaced interface to interact with the Siren API.
+The Siren Python SDK provides a clean, namespaced interface to interact with the Siren API.
 
 **Templates** (`client.template.*`)
 - **`client.template.get()`** - Retrieves a list of notification templates with optional filtering, sorting, and pagination
@@ -178,7 +178,7 @@ For testing the SDK, set these environment variables:
     *(On Windows, use: `.venv\Scripts\activate`)*
 
 4.  **Install dependencies with `uv`:**
-     This installs `siren-ai` in editable mode (`-e`) and all development dependencies (`.[dev]`).
+     This installs `trysiren` in editable mode (`-e`) and all development dependencies (`.[dev]`).
      ```bash
      uv pip install -e ".[dev]"
      ```
@@ -189,7 +189,7 @@ For testing the SDK, set these environment variables:
      uv run pre-commit install
      ```
 
-     You are now ready to contribute to the `siren-ai` SDK!
+     You are now ready to contribute to the `trysiren` SDK!
 
      Try `$ python examples/messaging_async.py`
 

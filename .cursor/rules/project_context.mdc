@@ -7,7 +7,7 @@ alwaysApply: false
 
 ## Project Summary
 
-Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
+Official Python SDK for the [Siren notification platform](mdc:siren-ts-sdk/https:/docs.trysiren.io). Provides type-safe interface for managing templates, workflows, users, messaging, and webhooks. Built with Pydantic validation, structured error handling, and modular client-based architecture.
 
 ## Key Features / Functional Modules
 
@@ -21,7 +21,7 @@ Official Python SDK for the [Siren notification platform](mdc:https:/docs.trysir
 ## Codebase Structure Overview
 
 ```
-siren-ai/
+trysiren/
 ├── siren/                    # Main SDK package
 │   ├── client.py            # Main SirenClient - unified API entry point
 │   ├── exceptions.py        # Custom exception classes (SirenAPIError, SirenSDKError)
