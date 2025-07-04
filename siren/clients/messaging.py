@@ -23,6 +23,7 @@ class MessageClient(BaseClient):
         channel: str,
         *,
         body: Optional[str] = None,
+        subject: Optional[str] = None,
         template_name: Optional[str] = None,
         template_variables: Optional[Dict[str, Any]] = None,
         provider_name: Optional[str] = None,
@@ -34,6 +35,7 @@ class MessageClient(BaseClient):
             recipient_value: The identifier for the recipient (e.g., Slack user ID, email address)
             channel: The channel to send the message through (e.g., "SLACK", "EMAIL")
             body: Optional message body text (required if no template)
+            subject: Optional subject for the message (required for channel type `EMAIL` with body)
             template_name: Optional template name (required if no body)
             template_variables: Optional template variables for template-based messages
             provider_name: Optional provider name (must be provided with provider_code)
@@ -61,6 +63,10 @@ class MessageClient(BaseClient):
 
         if body is not None:
             payload["body"] = body
+
+        if subject is not None:
+            payload["subject"] = subject
+        
         elif template_name is not None:
             payload["template"] = {"name": template_name}
             if template_variables is not None:

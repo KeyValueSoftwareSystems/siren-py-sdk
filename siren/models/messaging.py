@@ -66,6 +66,7 @@ class SendMessageRequest(BaseModel):
 
     channel: str
     body: Optional[str] = None
+    subject: Optional[str] = None
     template: Optional[TemplateInfo] = None
     template_variables: Optional[Dict[str, Any]] = Field(
         alias="templateVariables", default=None
