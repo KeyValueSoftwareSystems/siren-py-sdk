@@ -47,8 +47,16 @@ class TemplateInfo(BaseModel):
 class Recipient(BaseModel):
     """Recipient information for messaging."""
     # type: str = "direct"  # Default to "direct", can be "user_id" or other values
-    slack: str | None = None
     email: str | None = None
+    sms: str | None = None
+    whatsapp: str | None = None
+    slack: str | None = None
+    teams: str | None = None
+    discord: str | None = None
+    line: str | None = None
+    inApp: str | None = None
+    pushToken: str | None = None
+    
 
 
 class ProviderIntegration(BaseModel):
